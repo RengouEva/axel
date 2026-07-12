@@ -1,6 +1,3 @@
-import "server-only"
-import { PrismaClient } from "@prisma/client"
-
 function getDatabaseUrl(): string {
   const envUrl = process.env.DATABASE_URL
   if (envUrl && !envUrl.includes("placeholder") && !envUrl.includes("user:pass@")) return envUrl
@@ -12,8 +9,20 @@ function getDatabaseUrl(): string {
   return `mysql://${user}:${encodeURIComponent(pass)}@${host}:${port}/${name}`
 }
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
+const globalForPrisma = globalThis as unknown as { prisma: unknown }
+let _prisma: unknown = globalForPrisma.prisma
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ datasources: { db: { url: getDatabaseUrl() } } })
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
+export const prisma = new Proxy({} as Record<string, unknown>, {
+  get(_, prop: string) {
+    if (!_prisma) {
+      if (typeof window !== "undefined") {
+        throw new Error("PrismaClient cannot be used in the browser")
+      }
+      const pkg = "@prisma/client"
+      const mod = eval('require("' + pkg + '")') as { PrismaClient: new (opts?: unknown) => unknown }
+      _prisma = new mod.PrismaClient({ datasources: { db: { url: getDatabaseUrl() } } } as never)
+      if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = _prisma
+    }
+    return (_prisma as Record<string, unknown>)[prop]
+  }
+})

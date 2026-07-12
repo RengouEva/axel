@@ -1,7 +1,12 @@
-﻿import { getProducts } from "@/data/products"
-import ProductGridContent from "./product-grid-content"
+﻿import ProductGridContent from "./product-grid-content"
 
 export default async function ProductGrid() {
-  const products = await getProducts()
-  return <ProductGridContent products={products} />
+  let products: unknown[] = []
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+    const res = await fetch(`${baseUrl}/api/products?limit=8`, { cache: "no-store" })
+    const data = await res.json()
+    products = data.products || data || []
+  } catch {}
+  return <ProductGridContent products={products as never[]} />
 }
