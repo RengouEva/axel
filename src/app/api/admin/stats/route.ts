@@ -44,7 +44,7 @@ export async function GET(request: Request) {
       queryAll<{ status: string; count: number }>(
         "SELECT status, COUNT(*) as count FROM `Order` GROUP BY status"
       ),
-      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM ContactMessage WHERE `read` = 0"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM ContactMessage WHERE isRead = 0"),
       queryAll<any>(
         "SELECT id, name, email, role, createdAt FROM User ORDER BY createdAt DESC"
       ),

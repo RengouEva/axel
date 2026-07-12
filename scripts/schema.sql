@@ -288,9 +288,9 @@ CREATE TABLE IF NOT EXISTS ContactMessage (
   email VARCHAR(255) NOT NULL,
   subject VARCHAR(255) NOT NULL,
   message TEXT NOT NULL,
-  `read` TINYINT(1) DEFAULT 0,
+  isRead TINYINT(1) DEFAULT 0,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_read (`read`),
+  INDEX idx_isRead (isRead),
   INDEX idx_createdAt (createdAt)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
