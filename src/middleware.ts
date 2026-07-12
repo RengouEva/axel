@@ -10,6 +10,7 @@ function getJwtSecret(): Uint8Array | null {
 
 const PUBLIC_ROUTES = [
   "/",
+  "/debug",
   "/produits",
   "/produit",
   "/categorie",
@@ -35,6 +36,7 @@ const API_PUBLIC_ROUTES = [
   "/api/categories",
   "/api/credit",
   "/api/upload",
+  "/api/debug",
 ]
 
 const API_READ_ROUTES = [
