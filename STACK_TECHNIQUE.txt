@@ -1,0 +1,360 @@
+================================================================================
+                    AXEL MARKETPLACE — STACK TECHNIQUE COMPLÈTE
+================================================================================
+Projet : axel-marketplace v0.1.0
+Domaine : axel.marketplace
+Marché cible : Cameroun / Afrique Centrale
+Devise : XOF (Franc CFA)
+Langue UI : Français (fr-FR)
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. FRAMEWORK & RUNTIME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+next (v16.2.10)
+  Rôle : Framework React full-stack (App Router)
+  Utilisation : Routing, SSR/SSG/ISR, API routes, optimisation images,
+                middleware, metadata/SEO dynamique, server components
+
+react (v19.2.4)
+  Rôle : Bibliothèque UI principale
+  Utilisation : Construction de l'interface utilisateur, composants,
+                hooks (useState, useEffect, useCallback, useMemo, context)
+
+react-dom (v19.2.4)
+  Rôle : Rendu React pour le DOM
+  Utilisation : Rendu côté client et serveur, hydratation
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  2. LANGAGE & TYPECHECKING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+typescript (v^5)
+  Rôle : Système de types statiques pour JavaScript
+  Utilisation : Typage fort sur tout le projet, interfaces, generics,
+                détection d'erreurs à la compilation, autocomplétion IDE
+
+@types/node (v^20)
+  Rôle : Types TypeScript pour l'API Node.js
+  Utilisation : Typage des modules Node (fs, path, process, etc.)
+
+@types/react (v^19)
+  Rôle : Types TypeScript pour React
+  Utilisation : Typage des composants, hooks, props, événements React
+
+@types/react-dom (v^19)
+  Rôle : Types TypeScript pour ReactDOM
+  Utilisation : Typage du rendu DOM, portails, hydratation
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  3. STYLING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+tailwindcss (v^4)
+  Rôle : Framework CSS utility-first
+  Utilisation : Classes utilitaires pour le design system, responsive,
+                thème dark/light via CSS custom properties (45+ tokens)
+
+@tailwindcss/postcss (v^4)
+  Rôle : Plugin PostCSS pour Tailwind CSS v4
+  Utilisation : Traitement CSS, compilation des classes utilitaires,
+                purge CSS, optimisation production
+
+class-variance-authority (v^0.7.0)
+  Rôle : Bibliothèque de variantes de classes conditionnelles
+  Utilisation : Composants UI avec variants (button: primary/secondary/
+                outline/ghost, badge: credit/promo/default, etc.)
+
+clsx (v^2.0.0)
+  Rôle : Construction conditionnelle de classes CSS
+  Utilisation : Combinaison de classes avec conditions ternaires
+                Ex: cn("base", isActive && "active", isDark && "dark")
+
+tailwind-merge (v^3.0.0)
+  Rôle : Fusion intelligente de classes Tailwind
+  Utilisation : Résolution de conflits entre classes
+                Ex: "p-4 p-8" → "p-8" (pas de doublon)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  4. ANIMATION & ICONOGRAPHIE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+framer-motion (v^12.0.0)
+  Rôle : Bibliothèque d'animations React
+  Utilisation : Animations d'entrée/sortie (fadeIn, slideUp, scaleIn),
+                whileHover/whileTap sur les boutons, transitions de page,
+                viewport-triggered animations via AnimatedDiv
+
+lucide-react (v^1.0.0)
+  Rôle : Bibliothèque d'icônes (100+ icônes SVG)
+  Utilisation : Icônes dans toute l'application (panier, cœur, recherche,
+                menu, chevron, truck, shield, etc.), optimisé via
+                optimizePackageImports
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  5. BASE DE DONNÉES & ORM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+@prisma/client (v^5.22.0)
+  Rôle : Client ORM pour accéder à la base de données
+  Utilisation : Requêtes typées (findMany, findUnique, create, update,
+                delete, count, aggregate, groupBy), relations inclues,
+                singleton Prisma pour éviter les connexions en dev
+
+prisma (v^5.22.0) [devDep]
+  Rôle : CLI et générateur de client Prisma
+  Utilisation : prisma generate (génère le client), prisma db push
+                (synchronise le schéma), prisma studio (GUI), prisma reset
+
+SQLite (via Prisma)
+  Rôle : Base de données relationnelle légère
+  Utilisation : Base de développement (prisma/dev.db), 11 modèles,
+                indexes, clés étrangères, cascade onDelete
+  Note : En production, migrer vers PostgreSQL/MySQL
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  6. SÉCURITÉ — AUTHENTIFICATION & VALIDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+jose (v^6.2.3)
+  Rôle : Bibliothèque JWT compatible Web Crypto API
+  Utilisation : Création de tokens JWT signés (HS256), vérification
+                de tokens, gestion de l'expiration (7 jours),
+                issuer "axel-marketplace", cookies httpOnly/secure
+
+bcryptjs (v^3.0.3)
+  Rôle : Hachage de mots de passe (bcrypt)
+  Utilisation : Hash des mots de passe au register (12 rounds),
+                vérification au login via bcrypt.compare(),
+                sécurité contre les attaques par dictionnaire
+
+@types/bcryptjs (v^2.4.6) [devDep]
+  Rôle : Types TypeScript pour bcryptjs
+  Utilisation : Typage des fonctions hash(), compare()
+
+zod (v^4.4.3)
+  Rôle : Bibliothèque de validation de schémas
+  Utilisation : Validation de toutes les entrées API (login, register,
+                produits, commandes, crédit, livraison, contact),
+                messages d'erreur FR, types inférés TypeScript
+
+uuid (v^14.0.1)
+  Rôle : Génération d'identifiants uniques
+  Utilisation : Disponible pour génération d'IDs si nécessaire
+                (les IDs de commandes/missions utilisent un format custom)
+
+@types/uuid (v^10.0.0) [devDep]
+  Rôle : Types TypeScript pour uuid
+  Utilisation : Typage de la fonction v4()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  7. SÉCURITÉ — RATE LIMITING & HEADERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+rate-limit (implémentation custom dans src/lib/rate-limit.ts)
+  Rôle : Limiteur de débit en mémoire
+  Utilisation : Auth : 10 requêtes / 15 min par IP
+                API : 60 requêtes / minute par IP
+                Headers X-RateLimit-Remaining / Retry-After
+
+Security Headers (dans next.config.ts)
+  Rôle : En-têtes HTTP de sécurité
+  Utilisation :
+    - Strict-Transport-Security (HSTS) : forcer HTTPS
+    - X-Content-Type-Options: nosniff : empêcher le sniffing MIME
+    - X-Frame-Options: SAMEORIGIN : protection clickjacking
+    - X-XSS-Protection: 1; mode=block : protection XSS legacy
+    - Content-Security-Policy : politique de contenu stricte
+    - Referrer-Policy : contrôle du referer
+    - Permissions-Policy : désactiver caméra/mic/géoloc/payment
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  8. OUTILS DE DÉVELOPPEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+eslint (v^9)
+  Rôle : Linter JavaScript/TypeScript
+  Utilisation : Détection d'erreurs de code, style, patterns dangereux,
+                configuration flat (v9) avec eslint-config-next
+
+eslint-config-next (v16.2.10)
+  Rôle : Règles ESLint spécifiques à Next.js
+  Utilisation : Règles core-web-vitals + TypeScript,
+                ignore .next/ out/ build/
+
+vitest (v^4.1.10) [devDep]
+  Rôle : Framework de tests unitaires rapide
+  Utilisation : Tests des données (products, categories, delivery),
+                tests des utilitaires (cn()), 23 tests au total,
+                configuration globale (describe/it/expect)
+
+sharp (v^0.35.3) [devDep]
+  Rôle : Bibliothèque de traitement d'images haute performance
+  Utilisation : Optimisation des images Next.js (AVIF, WebP),
+                redimensionnement, conversion de formats
+
+lightningcss-win32-x64-msvc (v^1.32.0) [optional]
+  Rôle : Compilateur CSS natif pour Windows
+  Utilisation : Compilation CSS ultra-rapide (alternative à PostCSS),
+                optimisation Tailwind CSS en production
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  9. PWA (Progressive Web App)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Service Worker (public/sw.js) [custom]
+  Rôle : Mise en cache et mode hors-ligne
+  Utilisation : Cache-first strategy, 10 routes clés en cache,
+                versioning (axel-marketplace-v1), fallback réseau
+
+Manifest PWA (public/manifest.json) [custom]
+  Rôle : Configuration d'installation de l'app
+  Utilisation : Standalone display, portrait, theme #061A4A,
+                icônes multiples (SVG + 192px + 384px + 512px)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  10. ARCHITECTURE APPLICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+App Router (src/app/)
+  Rôle : Routing basé sur le filesystem
+  Utilisation : 34 segments de routes, layouts imbriqués,
+                loading.tsx/error.tsx par route, metadata dynamique
+
+React Context API (7 providers)
+  Rôle : Gestion d'état globale côté client
+  Utilisation :
+    - ThemeContext    : thème dark/light + localStorage
+    - AuthContext     : login/register/logout + JWT
+    - CartContext     : panier (add/remove/update/clear)
+    - FavoritesContext: favoris (toggle/isFavorite)
+    - CompareContext  : comparateur produits (max 4)
+    - NotificationContext: notifications inbox
+    - DeliveryContext : gestion livraisons/missions/livreurs
+
+Middleware (src/middleware.ts)
+  Rôle : Intercepteur de requêtes côté serveur
+  Utilisation : Protection des routes /admin, /vendeur, /compte,
+                vérification JWT via cookies, redirection si non auth
+
+API Routes (src/app/api/)
+  Rôle : Endpoints RESTful côté serveur
+  Utilisation :
+    - /api/auth         : login/register (action-based)
+    - /api/products     : CRUD produits avec pagination
+    - /api/orders       : gestion commandes
+    - /api/credit       : simulation crédit
+    - /api/delivery     : missions livraison
+    - /api/admin/stats  : statistiques admin (agrégation)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  11. SEO & ACCESSIBILITÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+JSON-LD Structured Data (src/lib/seo.tsx)
+  Rôle : Données structurées pour les moteurs de recherche
+  Utilisation : Organization, WebSite (SearchAction), Product, BreadcrumbList,
+                FAQPage — sanitisation XSS sur la sortie
+
+Dynamic Sitemap (src/app/sitemap.ts)
+  Rôle : Sitemap XML automatique
+  Utilisation : Pages statiques + catégories + produits dynamiques
+
+Dynamic Robots (src/app/robots.ts)
+  Rôle : Fichier robots.txt dynamique
+  Utilisation : Bloque /api, /compte, /admin, /panier de l'indexation
+
+OpenGraph Metadata (src/app/layout.tsx)
+  Rôle : Métadonnées pour partage social
+  Utilisation : Title, description, type, locale, siteName
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  12. SCRIPTS DE GÉNÉRATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+scripts/generate-assets.js
+  Rôle : Génération automatique d'assets
+  Utilisation : Génération des SVG produits et icônes PWA
+
+scripts/generate-variants.js
+  Rôle : Génération de variantes de thème
+  Utilisation : Création des variants nuit/sable/azur pour les SVG produits
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  13. SCRIPTS NPM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+dev           → next dev                    Serveur de développement
+build         → prisma generate + next build Build de production
+start         → next start                   Serveur de production
+lint          → eslint                       Linting du code
+test          → vitest run                   Exécution des tests (une fois)
+test:watch    → vitest                       Exécution des tests (watch)
+postinstall   → prisma generate              Auto-génération après npm install
+db:push       → prisma db push               Synchronisation schéma → DB
+db:seed       → node prisma/seed.js          Remplissage initial de la DB
+db:reset      → force-reset + seed           Reset complet de la DB
+db:studio     → prisma studio               GUI de gestion de la DB
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  14. DÉPLOIEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cible : Vercel (basé sur .vercel dans .gitignore)
+Base de données : SQLite (dev) → PostgreSQL recommandé pour production
+Variables d'environnement :
+  - DATABASE_URL      : chaîne de connexion DB
+  - JWT_SECRET        : secret pour signature JWT (à définir en prod)
+  - NEXT_PUBLIC_SITE_URL : URL publique du site
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  15. RÉSUMÉ DES DÉPENDANCES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Dépendances runtime (13) :
+    next, react, react-dom              → Framework & UI
+    @prisma/client                      → ORM
+    bcryptjs, jose                      → Sécurité auth
+    zod                                 → Validation
+    uuid                                → Génération IDs
+    framer-motion                       → Animations
+    lucide-react                        → Icônes
+    class-variance-authority            → Variants UI
+    clsx, tailwind-merge                → Classes CSS
+
+  Dépendances dev (11) :
+    @tailwindcss/postcss, tailwindcss   → Styling
+    typescript                          → Typage
+    @types/node, @types/react,          → Types TypeScript
+    @types/react-dom,
+    @types/bcryptjs, @types/uuid
+    eslint, eslint-config-next          → Linting
+    prisma                              → CLI ORM
+    sharp                               → Images
+    vitest                              → Tests
+
+  Dépendance optionnelle (1) :
+    lightningcss-win32-x64-msvc         → Compilateur CSS Windows
+
+  Total : 25 dépendances
+
+================================================================================
+  Généré le : 2026-07-10
+  Version audit remediation : 1.0
+================================================================================

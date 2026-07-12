@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="500" height="400">
+  <rect width="500" height="400" fill="#f8fafc" rx="16"/>
+  <g transform="translate(0, 10)">
+    <circle cx="250" cy="220" r="120" fill="#00a3e0" stroke="#333333" stroke-width="3"/>
+<circle cx="250" cy="220" r="80" fill="#ffffff" opacity="0.4"/>
+<circle cx="210" cy="200" r="12" fill="#333333"/>
+<circle cx="290" cy="200" r="12" fill="#333333"/>
+<rect x="230" y="230" width="40" height="6" rx="3" fill="#333333"/>
+<circle cx="250" cy="310" r="15" fill="#333333"/>
+<circle cx="200" cy="310" r="10" fill="#333333"/>
+<circle cx="300" cy="310" r="10" fill="#333333"/>
+  </g>
+  <text x="250" y="380" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#94a3b8">Roomba j9+</text>
+</svg>
