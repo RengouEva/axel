@@ -44,17 +44,29 @@ export function DeliveryProvider({ children }: { children: ReactNode }) {
   const { getAuthHeaders } = useAuth()
 
   useEffect(() => {
-    const headers = getAuthHeaders()
-    Promise.all([
-      fetch("/api/delivery", { headers }).then(r => r.json()),
-      fetch("/api/locations").then(r => r.json()),
-    ]).then(([deliveryData, locData]) => {
-      if (deliveryData.missions) setMissions(deliveryData.missions)
-      if (deliveryData.persons) setPersons(deliveryData.persons)
-      setCountries(locData.countries || deliveryData.countries || [])
-      setCities(locData.cities || deliveryData.cities || [])
-      setDistricts(locData.districts || deliveryData.districts || [])
-    }).catch(() => {})
+    const authHeaders = getAuthHeaders()
+    const hasAuth = Object.keys(authHeaders).length > 0
+
+    const promises: Promise<Response>[] = []
+    if (hasAuth) {
+      promises.push(fetch("/api/delivery", { headers: authHeaders }))
+    }
+    promises.push(fetch("/api/locations"))
+
+    Promise.all(promises.map(p => p.then(r => r.ok ? r.json() : {})))
+      .then((results) => {
+        let idx = 0
+        if (hasAuth) {
+          const deliveryData = results[idx++] as any
+          if (deliveryData.missions) setMissions(deliveryData.missions)
+          if (deliveryData.persons) setPersons(deliveryData.persons)
+        }
+        const locData = results[idx] as any
+        if (locData.countries) setCountries(locData.countries)
+        if (locData.cities) setCities(locData.cities)
+        if (locData.districts) setDistricts(locData.districts)
+      })
+      .catch(() => {})
   }, [getAuthHeaders])
 
   const setFilter = useCallback((key: keyof DeliveryFilters, value: string | null) => {
