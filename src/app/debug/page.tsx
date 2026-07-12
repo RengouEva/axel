@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma"
+import { getCategories } from "@/data/categories"
+import { getProducts } from "@/data/products"
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +26,10 @@ export default async function DebugPage() {
   let dbStatus = "inaccessible"
   let dbError = ""
   let tableCounts: Record<string, number> = {}
-  let productError = ""
+  let catsError = ""
+  let prodsError = ""
+  let nCats = 0
+  let nProds = 0
 
   try {
     await prisma.$connect()
@@ -40,14 +45,17 @@ export default async function DebugPage() {
     tableCounts["taxRates"] = await prisma.taxRate.count()
 
     try {
-      const products = await prisma.product.findMany({ take: 2, include: { shop: true } })
-      if (products.length > 0) {
-        productError = "OK - premier produit: " + products[0].name
-      } else {
-        productError = "Aucun produit trouvé"
-      }
+      const cats = await getCategories()
+      nCats = cats.length
     } catch (e: unknown) {
-      productError = "Erreur getProducts: " + (e as { message?: string }).message
+      catsError = (e as { message?: string }).message || String(e)
+    }
+
+    try {
+      const prods = await getProducts()
+      nProds = prods.length
+    } catch (e: unknown) {
+      prodsError = (e as { message?: string }).message || String(e)
     }
 
     await prisma.$disconnect()
@@ -74,10 +82,6 @@ export default async function DebugPage() {
               <td style={{ padding: "0.5rem", border: "1px solid #ccc", wordBreak: "break-all" }}>{mask(val)}</td>
             </tr>
           ))}
-          <tr>
-            <td style={{ fontWeight: "bold", padding: "0.5rem", border: "1px solid #ccc" }}>Connexion DB</td>
-            <td style={{ padding: "0.5rem", border: "1px solid #ccc", color: dbStatus === "connecté" ? "green" : "red" }}>{dbStatus}</td>
-          </tr>
         </tbody>
       </table>
 
@@ -95,14 +99,16 @@ export default async function DebugPage() {
               <td style={{ padding: "0.5rem", border: "1px solid #ccc" }}>{val}</td>
             </tr>
           ))}
+          <tr>
+            <td style={{ fontWeight: "bold", padding: "0.5rem", border: "1px solid #ccc" }}>getCategories()</td>
+            <td style={{ padding: "0.5rem", border: "1px solid #ccc", color: catsError ? "red" : "green" }}>{catsError || nCats + " catégories"}</td>
+          </tr>
+          <tr>
+            <td style={{ fontWeight: "bold", padding: "0.5rem", border: "1px solid #ccc" }}>getProducts()</td>
+            <td style={{ padding: "0.5rem", border: "1px solid #ccc", color: prodsError ? "red" : "green" }}>{prodsError || nProds + " produits"}</td>
+          </tr>
         </tbody>
       </table>
-
-      {productError && (
-        <div style={{ padding: "0.5rem", border: "1px solid #ccc", background: "#f9f9f9" }}>
-          <strong>Test produit: </strong>{productError}
-        </div>
-      )}
 
       {dbError && (
         <div style={{ padding: "0.5rem", border: "1px solid #ccc", color: "red", marginTop: "1rem" }}>
