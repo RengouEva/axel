@@ -35,14 +35,18 @@ const API_PUBLIC_ROUTES = [
   "/api/auth",
   "/api/categories",
   "/api/credit",
-  "/api/upload",
   "/api/debug",
+  "/api/locations",
+  "/api/products",
+  "/api/search",
   "/api/setup",
+  "/api/shops",
+  "/api/taxes",
+  "/api/upload",
+  "/api/plans",
 ]
 
-const API_READ_ROUTES = [
-  "/api/products",
-]
+const API_READ_ROUTES: string[] = []
 
 function isPublicRoute(pathname: string): boolean {
   if (pathname === "/") return true

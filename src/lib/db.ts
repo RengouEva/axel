@@ -1,6 +1,8 @@
 import mysql from "mysql2/promise"
 import "server-only"
 
+let pool: mysql.Pool | null = null
+
 function getDatabaseUrl(): string {
   const envUrl = process.env.DATABASE_URL
   if (envUrl && !envUrl.includes("placeholder") && !envUrl.includes("user:pass@")) return envUrl
@@ -23,36 +25,52 @@ function parseUrl(url: string) {
   }
 }
 
-const globalForDb = globalThis as unknown as { pool: mysql.Pool | undefined }
-const config = parseUrl(getDatabaseUrl())
-const pool = globalForDb.pool ?? mysql.createPool({
-  host: config.host,
-  port: config.port,
-  user: config.user,
-  password: config.password,
-  database: config.database,
-  waitForConnections: true,
-  connectionLimit: 10,
-  dateStrings: true,
-})
-if (process.env.NODE_ENV !== "production") globalForDb.pool = pool
+async function getPool(): Promise<mysql.Pool> {
+  if (pool) return pool
+  const config = parseUrl(getDatabaseUrl())
+  pool = mysql.createPool({
+    host: config.host,
+    port: config.port,
+    user: config.user,
+    password: config.password,
+    database: config.database,
+    waitForConnections: true,
+    connectionLimit: 10,
+    dateStrings: true,
+    connectTimeout: 10000,
+  })
+  try {
+    const conn = await pool.getConnection()
+    conn.release()
+  } catch (err) {
+    console.error("[DB] Échec de connexion MySQL:", err)
+    const saved = pool
+    pool = null
+    await saved.end()
+    throw err
+  }
+  return pool
+}
 
 type Params = any[] | Record<string, any>
 
 export async function queryOne<T>(sql: string, params?: Params): Promise<T | null> {
-  const [rows] = await pool.execute(sql, params as any)
+  const p = await getPool()
+  const [rows] = await p.execute(sql, params as any)
   const arr = rows as T[]
   return arr.length > 0 ? arr[0] : null
 }
 
 export async function queryAll<T>(sql: string, params?: Params): Promise<T[]> {
-  const [rows] = await pool.execute(sql, params as any)
+  const p = await getPool()
+  const [rows] = await p.execute(sql, params as any)
   return rows as T[]
 }
 
 export async function execute(
   sql: string, params?: Params
 ): Promise<{ affectedRows: number; insertId?: number }> {
-  const [result] = await pool.execute(sql, params as any)
+  const p = await getPool()
+  const [result] = await p.execute(sql, params as any)
   return result as { affectedRows: number; insertId?: number }
 }

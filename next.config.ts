@@ -25,7 +25,7 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["motion-dom", "motion-utils"],
+  serverExternalPackages: ["mysql2", "motion-dom", "motion-utils"],
   experimental: {
     optimizePackageImports: ["framer-motion", "lucide-react"],
   },

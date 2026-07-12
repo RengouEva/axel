@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { execute, queryAll } from "@/lib/db"
+import { ALL_COUNTRIES } from "@/data/countries"
 
 export const dynamic = 'force-dynamic'
 
@@ -357,12 +358,7 @@ const CATEGORIES_SEED = [
   { name: "Autres", slug: "autres", icon: "Grid3X3" },
 ]
 
-const COUNTRIES_SEED = [
-  { id: "CM", name: "Cameroun", flag: "🇨🇲" },
-  { id: "CI", name: "Côte d'Ivoire", flag: "🇨🇮" },
-  { id: "SN", name: "Sénégal", flag: "🇸🇳" },
-  { id: "GA", name: "Gabon", flag: "🇬🇦" },
-]
+const COUNTRIES_SEED = ALL_COUNTRIES
 
 const CITIES_SEED = [
   { id: "DLA", name: "Douala", countryId: "CM", x: 210, y: 180 },
