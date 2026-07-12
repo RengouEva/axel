@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 
 export const dynamic = 'force-dynamic'
 
+const PRISMA = "./node_modules/.bin/prisma"
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const key = searchParams.get("key")
@@ -22,7 +24,7 @@ export async function GET(request: Request) {
     const url = `mysql://${user}:${encodeURIComponent(pass)}@${host}:${port}/${name}`
 
     results.push("Running prisma db push...")
-    execSync("npx prisma db push", { env: { ...process.env, DATABASE_URL: url }, stdio: "pipe" })
+    execSync(`${PRISMA} db push`, { env: { ...process.env, DATABASE_URL: url }, stdio: "pipe" })
     results.push("Tables créées avec succès")
 
     results.push("Running prisma seed...")
