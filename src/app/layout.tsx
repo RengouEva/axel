@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+export const dynamic = 'force-dynamic';
 import { Poppins, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/navbar";
