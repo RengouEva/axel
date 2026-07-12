@@ -4,19 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "db:push": "npx prisma db push",
-    "db:seed": "node prisma/seed.js",
-    "db:reset": "npx prisma db push --force-reset && node prisma/seed.js",
-    "db:reset:full": "npx prisma db push --force-reset && node prisma/seed.js && npx prisma generate",
-    "db:studio": "npx prisma studio"
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
     "@tailwindcss/postcss": "^4",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.0",
@@ -24,8 +18,8 @@
     "framer-motion": "^12.0.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.0.0",
+    "mysql2": "^3.22.6",
     "next": "16.2.10",
-    "prisma": "^5.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1",

@@ -1,5 +1,4 @@
-import "server-only"
-import { prisma } from "@/lib/prisma"
+import { queryAll, queryOne } from "@/lib/db"
 
 export interface Category {
   id: number
@@ -9,13 +8,9 @@ export interface Category {
 }
 
 export async function getCategories(): Promise<Category[]> {
-  return await prisma.category.findMany({
-    orderBy: { id: "asc" },
-  })
+  return await queryAll<Category>("SELECT * FROM Category ORDER BY id ASC")
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  return await prisma.category.findUnique({
-    where: { slug },
-  })
+  return await queryOne<Category>("SELECT * FROM Category WHERE slug = ?", [slug])
 }

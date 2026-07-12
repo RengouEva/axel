@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
 
 export async function DELETE(
@@ -13,7 +13,7 @@ export async function DELETE(
     const { id } = await params
     const userId = Number(id)
 
-    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const user = await queryOne<any>("SELECT * FROM User WHERE id = ?", [userId])
     if (!user) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 })
     }
@@ -25,7 +25,7 @@ export async function DELETE(
       )
     }
 
-    await prisma.user.delete({ where: { id: userId } })
+    await execute("DELETE FROM User WHERE id = ?", [userId])
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -45,7 +45,7 @@ export async function PUT(
     const { id } = await params
     const userId = Number(id)
 
-    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const user = await queryOne<any>("SELECT * FROM User WHERE id = ?", [userId])
     if (!user) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 })
     }
@@ -57,11 +57,11 @@ export async function PUT(
       return NextResponse.json({ error: "Rôle invalide" }, { status: 400 })
     }
 
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: { role: role || user.role },
-      select: { id: true, name: true, email: true, role: true, createdAt: true },
-    })
+    await execute("UPDATE User SET role = ? WHERE id = ?", [role || user.role, userId])
+    const updated = await queryOne<any>(
+      "SELECT id, name, email, role, createdAt FROM User WHERE id = ?",
+      [userId]
+    )
 
     return NextResponse.json(updated)
   } catch (error) {

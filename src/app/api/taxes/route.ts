@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
 
 export async function GET(request: Request) {
@@ -8,11 +8,11 @@ export async function GET(request: Request) {
     const countryId = searchParams.get("countryId")
 
     if (countryId) {
-      const rate = await prisma.taxRate.findUnique({ where: { countryId } })
+      const rate = await queryOne<any>("SELECT rate FROM TaxRate WHERE countryId = ?", [countryId])
       return NextResponse.json({ rate: rate?.rate ?? 19.25 })
     }
 
-    const rates = await prisma.taxRate.findMany({ orderBy: { countryId: "asc" } })
+    const rates = await queryAll<any>("SELECT * FROM TaxRate ORDER BY countryId ASC")
     return NextResponse.json({ rates })
   } catch (error) {
     console.error("[TAXES_GET]", error)
@@ -30,23 +30,25 @@ export async function POST(request: Request) {
 
     if (action === "save" && Array.isArray(rates)) {
       for (const rate of rates) {
-        await prisma.taxRate.upsert({
-          where: { countryId: rate.countryId },
-          update: { rate: rate.rate, label: rate.label },
-          create: { countryId: rate.countryId, rate: rate.rate, label: rate.label },
-        })
+        const existing = await queryOne<any>("SELECT id FROM TaxRate WHERE countryId = ?", [rate.countryId])
+        if (existing) {
+          await execute("UPDATE TaxRate SET rate = ?, label = ? WHERE countryId = ?", [rate.rate, rate.label, rate.countryId])
+        } else {
+          await execute("INSERT INTO TaxRate (countryId, rate, label) VALUES (?, ?, ?)", [rate.countryId, rate.rate, rate.label])
+        }
       }
       return NextResponse.json({ success: true })
     }
 
     if (action === "reset") {
-      const existing = await prisma.taxRate.findMany()
+      const existing = await queryAll<any>("SELECT * FROM TaxRate")
       for (const rate of existing) {
-        await prisma.taxRate.upsert({
-          where: { countryId: rate.countryId },
-          update: { rate: rate.rate, label: rate.label },
-          create: { countryId: rate.countryId, rate: rate.rate, label: rate.label },
-        })
+        const exists = await queryOne<any>("SELECT id FROM TaxRate WHERE countryId = ?", [rate.countryId])
+        if (exists) {
+          await execute("UPDATE TaxRate SET rate = ?, label = ? WHERE countryId = ?", [rate.rate, rate.label, rate.countryId])
+        } else {
+          await execute("INSERT INTO TaxRate (countryId, rate, label) VALUES (?, ?, ?)", [rate.countryId, rate.rate, rate.label])
+        }
       }
       return NextResponse.json({ success: true, rates: existing })
     }

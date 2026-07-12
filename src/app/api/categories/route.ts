@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll } from "@/lib/db"
 import { checkApiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
 
 export async function GET(request: Request) {
@@ -16,12 +16,12 @@ export async function GET(request: Request) {
     const slug = searchParams.get("slug")
 
     if (slug) {
-      const category = await prisma.category.findUnique({ where: { slug } })
+      const category = await queryOne<any>("SELECT * FROM Category WHERE slug = ?", [slug])
       if (!category) return NextResponse.json({ error: "Catégorie non trouvée" }, { status: 404 })
       return NextResponse.json(category, { headers })
     }
 
-    const categories = await prisma.category.findMany()
+    const categories = await queryAll<any>("SELECT * FROM Category")
     return NextResponse.json({ categories }, { headers })
   } catch (error) {
     console.error("[CATEGORIES_GET]", error)

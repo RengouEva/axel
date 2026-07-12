@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll } from "@/lib/db"
 import { getCategories } from "@/data/categories"
 import { getProducts } from "@/data/products"
 
@@ -32,17 +32,27 @@ export default async function DebugPage() {
   let nProds = 0
 
   try {
-    await prisma.$connect()
+    const [catCount, prodCount, userCount, shopCount, planCount, countryCount, cityCount, districtCount, taxCount] = await Promise.all([
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM Category"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM Product"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM User"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM Shop"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM Plan"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM Country"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM City"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM District"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM TaxRate"),
+    ])
     dbStatus = "connecté"
-    tableCounts["categories"] = await prisma.category.count()
-    tableCounts["products"] = await prisma.product.count()
-    tableCounts["users"] = await prisma.user.count()
-    tableCounts["shops"] = await prisma.shop.count()
-    tableCounts["plans"] = await prisma.plan.count()
-    tableCounts["countries"] = await prisma.country.count()
-    tableCounts["cities"] = await prisma.city.count()
-    tableCounts["districts"] = await prisma.district.count()
-    tableCounts["taxRates"] = await prisma.taxRate.count()
+    tableCounts["categories"] = catCount?.count ?? 0
+    tableCounts["products"] = prodCount?.count ?? 0
+    tableCounts["users"] = userCount?.count ?? 0
+    tableCounts["shops"] = shopCount?.count ?? 0
+    tableCounts["plans"] = planCount?.count ?? 0
+    tableCounts["countries"] = countryCount?.count ?? 0
+    tableCounts["cities"] = cityCount?.count ?? 0
+    tableCounts["districts"] = districtCount?.count ?? 0
+    tableCounts["taxRates"] = taxCount?.count ?? 0
 
     try {
       const cats = await getCategories()
@@ -57,8 +67,6 @@ export default async function DebugPage() {
     } catch (e: unknown) {
       prodsError = (e as { message?: string }).message || String(e)
     }
-
-    await prisma.$disconnect()
   } catch (e: unknown) {
     const err = e as { message?: string }
     dbError = err?.message || String(e)

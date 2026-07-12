@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, execute } from "@/lib/db"
 import { validateInput, shopUpdateSchema } from "@/lib/validations"
 import { requireAuth } from "@/lib/require-auth"
 import { checkApiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
@@ -7,15 +7,16 @@ import { checkApiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const shop = await prisma.shop.findUnique({
-      where: { id },
-      include: {
-        seller: { select: { id: true, name: true, email: true } },
-      },
-    })
+    const shop = await queryOne<any>(
+      `SELECT s.*, u.id as _sellerId, u.name as _sellerName, u.email as _sellerEmail
+       FROM Shop s LEFT JOIN User u ON u.id = s.sellerId WHERE s.id = ?`,
+      [id]
+    )
     if (!shop) {
       return NextResponse.json({ error: "Boutique non trouvée" }, { status: 404 })
     }
+    shop.seller = { id: shop._sellerId, name: shop._sellerName, email: shop._sellerEmail }
+    delete shop._sellerId; delete shop._sellerName; delete shop._sellerEmail
     return NextResponse.json(shop)
   } catch (error) {
     console.error("[SHOP_GET]", error)
@@ -40,7 +41,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (!auth.success) return auth.response
 
     const { id } = await params
-    const existing = await prisma.shop.findUnique({ where: { id } })
+    const existing = await queryOne<any>("SELECT * FROM Shop WHERE id = ?", [id])
     if (!existing) {
       return NextResponse.json({ error: "Boutique non trouvée" }, { status: 404 })
     }
@@ -54,11 +55,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    const shop = await prisma.shop.update({
-      where: { id },
-      data: validation.data,
-    })
+    const updates = validation.data as Record<string, unknown>
+    const setClauses = Object.keys(updates).map(k => `${k} = ?`)
+    const values = Object.values(updates)
+    await execute(`UPDATE Shop SET ${setClauses.join(", ")} WHERE id = ?`, [...values, id])
 
+    const shop = await queryOne<any>("SELECT * FROM Shop WHERE id = ?", [id])
     return NextResponse.json(shop)
   } catch (error) {
     console.error("[SHOP_PUT]", error)
@@ -72,7 +74,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     if (!auth.success) return auth.response
 
     const { id } = await params
-    const existing = await prisma.shop.findUnique({ where: { id } })
+    const existing = await queryOne<any>("SELECT * FROM Shop WHERE id = ?", [id])
     if (!existing) {
       return NextResponse.json({ error: "Boutique non trouvée" }, { status: 404 })
     }
@@ -80,7 +82,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
     }
 
-    await prisma.shop.delete({ where: { id } })
+    await execute("DELETE FROM Shop WHERE id = ?", [id])
     return NextResponse.json({ message: "Boutique supprimée" })
   } catch (error) {
     console.error("[SHOP_DELETE]", error)

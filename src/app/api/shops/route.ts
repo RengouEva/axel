@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll, execute } from "@/lib/db"
 import { validateInput, shopCreateSchema } from "@/lib/validations"
 import { requireAuth } from "@/lib/require-auth"
 import { checkApiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
@@ -19,33 +19,22 @@ export async function GET(request: Request) {
     const sellerId = searchParams.get("sellerId")
     const search = searchParams.get("search")
 
-    let where: Record<string, unknown> = {}
-    if (sellerId) where.sellerId = Number(sellerId)
-    if (search) where.name = { contains: search }
+    const conditions: string[] = []
+    const params: unknown[] = []
+    if (sellerId) {
+      conditions.push("sellerId = ?")
+      params.push(Number(sellerId))
+    }
+    if (search) {
+      conditions.push("name LIKE ?")
+      params.push(`%${search}%`)
+    }
+    const whereSQL = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : ""
 
-    const shops = await prisma.shop.findMany({
-      where,
-      select: {
-        id: true,
-        sellerId: true,
-        name: true,
-        slug: true,
-        description: true,
-        phone: true,
-        email: true,
-        logo: true,
-        coverImage: true,
-        countryId: true,
-        cityId: true,
-        districtId: true,
-        address: true,
-        category: true,
-        rating: true,
-        totalSales: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-    })
+    const shops = await queryAll<any>(
+      `SELECT id, sellerId, name, slug, description, phone, email, logo, coverImage, countryId, cityId, districtId, address, category, rating, totalSales, createdAt FROM Shop ${whereSQL} ORDER BY createdAt DESC`,
+      params
+    )
     return NextResponse.json(shops)
   } catch (error) {
     console.error("[SHOPS_GET]", error)
@@ -75,33 +64,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    const existingShop = await prisma.shop.findUnique({ where: { sellerId: auth.user.userId } })
+    const existingShop = await queryOne<any>("SELECT id FROM Shop WHERE sellerId = ?", [auth.user.userId])
     if (existingShop) {
       return NextResponse.json({ error: "Vous avez déjà une boutique" }, { status: 409 })
     }
 
     const { name, description, phone, email, countryId, cityId, districtId, address, category } = validation.data
     const slug = slugify(name) + "-" + Date.now().toString(36)
+    const shopId = `SHOP-${Date.now().toString(36).toUpperCase()}`
 
-    const shop = await prisma.shop.create({
-      data: {
-        id: `SHOP-${Date.now().toString(36).toUpperCase()}`,
-        sellerId: auth.user.userId,
-        name,
-        slug,
-        description: description || "",
-        phone: phone || "",
-        email: email || "",
-        logo: "/images/shops/default.svg",
-        coverImage: "/images/shops/default-cover.svg",
-        countryId,
-        cityId,
-        districtId,
-        address: address || "",
-        category,
-      },
-    })
+    await execute(
+      `INSERT INTO Shop (id, sellerId, name, slug, description, phone, email, logo, coverImage, countryId, cityId, districtId, address, category)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [shopId, auth.user.userId, name, slug, description || "", phone || "", email || "",
+       "/images/shops/default.svg", "/images/shops/default-cover.svg",
+       countryId, cityId, districtId, address || "", category]
+    )
 
+    const shop = await queryOne<any>("SELECT * FROM Shop WHERE id = ?", [shopId])
     return NextResponse.json(shop, { status: 201 })
   } catch (error) {
     console.error("[SHOPS_POST]", error)

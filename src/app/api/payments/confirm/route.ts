@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
 
 const BADGE_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
@@ -19,13 +19,15 @@ async function assignSubscriptionBadges(shopId: string, plan: { hasPremiumBadge:
   if (plan.hasFeaturedBadge) badges.push({ type: "featured", ...BADGE_CONFIG.featured, assignedBy: "subscription" })
 
   for (const badge of badges) {
-    const existing = await prisma.shopBadge.findFirst({
-      where: { shopId, type: badge.type },
-    })
+    const existing = await queryOne<any>(
+      "SELECT id FROM ShopBadge WHERE shopId = ? AND type = ? LIMIT 1",
+      [shopId, badge.type]
+    )
     if (!existing) {
-      await prisma.shopBadge.create({
-        data: { id: generateId("BDG"), shopId, ...badge },
-      })
+      await execute(
+        "INSERT INTO ShopBadge (id, shopId, type, label, color, icon, assignedBy) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [generateId("BDG"), shopId, badge.type, badge.label, badge.color, badge.icon, badge.assignedBy]
+      )
     }
   }
 }
@@ -43,8 +45,8 @@ export async function POST(request: Request) {
     }
 
     const transaction = transactionId
-      ? await prisma.transaction.findUnique({ where: { id: transactionId } })
-      : await prisma.transaction.findFirst({ where: { reference } })
+      ? await queryOne<any>("SELECT * FROM `Transaction` WHERE id = ?", [transactionId])
+      : await queryOne<any>("SELECT * FROM `Transaction` WHERE reference = ? LIMIT 1", [reference])
 
     if (!transaction) {
       return NextResponse.json({ error: "Transaction non trouvée" }, { status: 404 })
@@ -54,49 +56,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Cette transaction a déjà été traitée" }, { status: 400 })
     }
 
-    await prisma.transaction.update({
-      where: { id: transaction.id },
-      data: { status: "completed" },
-    })
+    await execute("UPDATE `Transaction` SET status = 'completed' WHERE id = ?", [transaction.id])
 
     if (transaction.type === "subscription" && transaction.metadata) {
       const meta = JSON.parse(transaction.metadata)
-      const pendingSubscription = await prisma.shopSubscription.findFirst({
-        where: {
-          shopId: transaction.shopId!,
-          planId: meta.planId,
-          status: "pending",
-        },
-        include: { plan: true },
-        orderBy: { createdAt: "desc" },
-      })
+      const pendingSubscription = await queryOne<any>(
+        `SELECT sub.*, p.id as _plan_id, p.name as _plan_name, p.durationDays as _plan_durationDays, p.hasPremiumBadge, p.hasVerifiedBadge, p.hasFeaturedBadge
+         FROM ShopSubscription sub JOIN Plan p ON p.id = sub.planId
+         WHERE sub.shopId = ? AND sub.planId = ? AND sub.status = 'pending'
+         ORDER BY sub.createdAt DESC LIMIT 1`,
+        [transaction.shopId, meta.planId]
+      )
 
       if (pendingSubscription) {
         const now = new Date()
-        const endDate = new Date(now.getTime() + pendingSubscription.plan.durationDays * 24 * 60 * 60 * 1000)
+        const endDate = new Date(now.getTime() + pendingSubscription._plan_durationDays * 24 * 60 * 60 * 1000)
 
-        await prisma.shopSubscription.update({
-          where: { id: pendingSubscription.id },
-          data: { status: "active", startDate: now, endDate },
+        await execute(
+          "UPDATE ShopSubscription SET status = 'active', startDate = ?, endDate = ? WHERE id = ?",
+          [now, endDate, pendingSubscription.id]
+        )
+
+        await assignSubscriptionBadges(pendingSubscription.shopId, {
+          hasPremiumBadge: pendingSubscription.hasPremiumBadge,
+          hasVerifiedBadge: pendingSubscription.hasVerifiedBadge,
+          hasFeaturedBadge: pendingSubscription.hasFeaturedBadge,
         })
-
-        await assignSubscriptionBadges(pendingSubscription.shopId, pendingSubscription.plan)
       } else if (meta.planId && transaction.shopId) {
-        const plan = await prisma.plan.findUnique({ where: { id: meta.planId } })
+        const plan = await queryOne<any>("SELECT * FROM Plan WHERE id = ?", [meta.planId])
         if (plan) {
           const now = new Date()
           const endDate = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000)
 
-          const subscription = await prisma.shopSubscription.create({
-            data: {
-              id: generateId("SUB"),
-              shopId: transaction.shopId,
-              planId: plan.id,
-              startDate: now,
-              endDate,
-              status: "active",
-            },
-          })
+          await execute(
+            "INSERT INTO ShopSubscription (id, shopId, planId, startDate, endDate, status) VALUES (?, ?, ?, ?, ?, ?)",
+            [generateId("SUB"), transaction.shopId, plan.id, now, endDate, "active"]
+          )
 
           await assignSubscriptionBadges(transaction.shopId, plan)
         }
@@ -105,20 +100,13 @@ export async function POST(request: Request) {
 
     if (transaction.type === "boost" && transaction.metadata) {
       const meta = JSON.parse(transaction.metadata)
-      const pendingBoost = await prisma.productBoost.findFirst({
-        where: {
-          shopId: transaction.shopId!,
-          productId: meta.productId,
-          status: "pending",
-        },
-        orderBy: { createdAt: "desc" },
-      })
+      const pendingBoost = await queryOne<any>(
+        "SELECT id FROM ProductBoost WHERE shopId = ? AND productId = ? AND status = 'pending' ORDER BY createdAt DESC LIMIT 1",
+        [transaction.shopId, meta.productId]
+      )
 
       if (pendingBoost) {
-        await prisma.productBoost.update({
-          where: { id: pendingBoost.id },
-          data: { status: "active" },
-        })
+        await execute("UPDATE ProductBoost SET status = 'active' WHERE id = ?", [pendingBoost.id])
       }
     }
 

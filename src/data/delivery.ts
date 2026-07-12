@@ -1,5 +1,4 @@
-import "server-only"
-import { prisma } from "@/lib/prisma"
+import { queryAll, queryOne } from "@/lib/db"
 
 export interface Country {
   id: string
@@ -69,42 +68,44 @@ export interface ProductStock {
 }
 
 export async function getCountries(): Promise<Country[]> {
-  return await prisma.country.findMany({ orderBy: { name: "asc" } })
+  return await queryAll<Country>("SELECT * FROM Country ORDER BY name ASC")
 }
 
 export async function getCities(): Promise<City[]> {
-  return await prisma.city.findMany({ orderBy: { name: "asc" } })
+  return await queryAll<City>("SELECT * FROM City ORDER BY name ASC")
 }
 
 export async function getDistricts(): Promise<District[]> {
-  return await prisma.district.findMany({ orderBy: { name: "asc" } })
+  return await queryAll<District>("SELECT * FROM District ORDER BY name ASC")
 }
 
-export async function getDeliveryPersons(): Promise<DeliveryPerson[]> {
-  const persons = await prisma.deliveryPerson.findMany({ orderBy: { name: "asc" } })
-  return persons.map((p: any) => ({
+function parsePerson(p: any): DeliveryPerson {
+  return {
     id: p.id,
     name: p.name,
     phone: p.phone,
     email: p.email,
     avatar: p.avatar,
-    location: JSON.parse(p.coordinates || "{x:0,y:0}"),
+    location: (() => {
+      try { return JSON.parse(p.coordinates || "{x:0,y:0}") } catch { return { x: 0, y: 0 } }
+    })(),
     countryId: p.countryId,
     cityId: p.cityId,
     districtId: p.districtId,
-    available: p.available,
+    available: Boolean(p.available),
     rating: p.rating,
     kycStatus: p.kycStatus as KycStatus,
     missionsCount: p.missionsCount,
-  }))
+  }
 }
 
-export async function getDeliveryMissions(): Promise<DeliveryMission[]> {
-  const missions = await prisma.deliveryMission.findMany({
-    include: { deliveryPerson: true },
-    orderBy: { createdAt: "desc" },
-  })
-  return missions.map((m: any) => ({
+export async function getDeliveryPersons(): Promise<DeliveryPerson[]> {
+  const data = await queryAll<any>("SELECT * FROM DeliveryPerson ORDER BY name ASC")
+  return data.map(parsePerson)
+}
+
+function parseMission(m: any, persons?: DeliveryPerson[]): DeliveryMission {
+  return {
     id: m.id,
     orderId: m.orderId,
     deliveryPersonId: m.deliveryPersonId ?? undefined,
@@ -116,29 +117,25 @@ export async function getDeliveryMissions(): Promise<DeliveryMission[]> {
     deliveryAddress: m.deliveryAddress,
     customerName: m.customerName,
     customerPhone: m.customerPhone,
-    assignedAt: m.assignedAt?.toISOString?.() ?? undefined,
-    completedAt: m.completedAt?.toISOString?.() ?? undefined,
-    deliveryPerson: m.deliveryPerson ? {
-      id: m.deliveryPerson.id,
-      name: m.deliveryPerson.name,
-      phone: m.deliveryPerson.phone,
-      email: m.deliveryPerson.email,
-      avatar: m.deliveryPerson.avatar,
-      location: JSON.parse(m.deliveryPerson.coordinates || "{x:0,y:0}"),
-      countryId: m.deliveryPerson.countryId,
-      cityId: m.deliveryPerson.cityId,
-      districtId: m.deliveryPerson.districtId,
-      available: m.deliveryPerson.available,
-      rating: m.deliveryPerson.rating,
-      kycStatus: m.deliveryPerson.kycStatus as KycStatus,
-      missionsCount: m.deliveryPerson.missionsCount,
-    } : undefined,
-  }))
+    assignedAt: m.assignedAt ? (typeof m.assignedAt === "string" ? m.assignedAt : m.assignedAt?.toISOString?.()) : undefined,
+    completedAt: m.completedAt ? (typeof m.completedAt === "string" ? m.completedAt : m.completedAt?.toISOString?.()) : undefined,
+    deliveryPerson: m.deliveryPersonId && persons
+      ? persons.find(p => p.id === m.deliveryPersonId)
+      : undefined,
+  }
+}
+
+export async function getDeliveryMissions(): Promise<DeliveryMission[]> {
+  const [missions, persons] = await Promise.all([
+    queryAll<any>("SELECT * FROM DeliveryMission ORDER BY createdAt DESC"),
+    getDeliveryPersons(),
+  ])
+  return missions.map((m: any) => parseMission(m, persons))
 }
 
 export async function getProductStocks(): Promise<ProductStock[]> {
-  const stocks = await prisma.productStock.findMany()
-  return stocks.map((s: any) => ({
+  const data = await queryAll<any>("SELECT * FROM ProductStock")
+  return data.map((s: any) => ({
     productId: s.productId,
     countryId: s.countryId,
     cityId: s.cityId,

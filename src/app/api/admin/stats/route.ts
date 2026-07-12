@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
 import { checkApiRateLimit } from "@/lib/rate-limit"
 
@@ -15,50 +15,70 @@ export async function GET(request: Request) {
     }
 
     const [
-      totalUsers,
-      totalClients,
-      totalSellers,
-      totalAdmins,
-      totalProducts,
-      totalShops,
-      totalOrders,
-      revenueAgg,
+      totalUsersRow,
+      totalClientsRow,
+      totalSellersRow,
+      totalAdminsRow,
+      totalProductsRow,
+      totalShopsRow,
+      totalOrdersRow,
+      revenueRow,
       recentOrders,
       ordersByStatus,
-      unreadMessages,
+      unreadMessagesRow,
       users,
     ] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { role: "client" } }),
-      prisma.user.count({ where: { role: "seller" } }),
-      prisma.user.count({ where: { role: "admin" } }),
-      prisma.product.count(),
-      prisma.shop.count(),
-      prisma.order.count(),
-      prisma.order.aggregate({ _sum: { total: true } }),
-      prisma.order.findMany({
-        include: {
-          items: true,
-          user: { select: { id: true, name: true, email: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      }),
-      prisma.order.groupBy({
-        by: ["status"],
-        _count: true,
-      }),
-      prisma.contactMessage.count({ where: { read: false } }),
-      prisma.user.findMany({
-        select: { id: true, name: true, email: true, role: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-      }),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM User"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM User WHERE role = 'client'"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM User WHERE role = 'seller'"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM User WHERE role = 'admin'"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM Product"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM Shop"),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM `Order`"),
+      queryOne<{ total: number | null }>("SELECT SUM(total) as total FROM `Order`"),
+      queryAll<any>(
+        `SELECT o.*, u.id as _user_id, u.name as _user_name, u.email as _user_email
+         FROM \`Order\` o LEFT JOIN User u ON u.id = o.userId
+         ORDER BY o.createdAt DESC LIMIT 5`
+      ),
+      queryAll<{ status: string; count: number }>(
+        "SELECT status, COUNT(*) as count FROM `Order` GROUP BY status"
+      ),
+      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM ContactMessage WHERE `read` = 0"),
+      queryAll<any>(
+        "SELECT id, name, email, role, createdAt FROM User ORDER BY createdAt DESC"
+      ),
     ])
 
-    const totalRevenue = revenueAgg._sum.total || 0
+    const totalUsers = totalUsersRow?.count ?? 0
+    const totalClients = totalClientsRow?.count ?? 0
+    const totalSellers = totalSellersRow?.count ?? 0
+    const totalAdmins = totalAdminsRow?.count ?? 0
+    const totalProducts = totalProductsRow?.count ?? 0
+    const totalShops = totalShopsRow?.count ?? 0
+    const totalOrders = totalOrdersRow?.count ?? 0
+    const totalRevenue = revenueRow?.total ?? 0
+    const unreadMessages = unreadMessagesRow?.count ?? 0
+
+    if (recentOrders.length > 0) {
+      const orderIds = recentOrders.map((o: any) => o.id)
+      const placeholders = orderIds.map(() => "?").join(",")
+      const allItems = await queryAll<any>(`SELECT * FROM OrderItem WHERE orderId IN (${placeholders})`, orderIds)
+      const itemsByOrder: Record<string, any[]> = {}
+      for (const item of allItems) {
+        if (!itemsByOrder[item.orderId]) itemsByOrder[item.orderId] = []
+        itemsByOrder[item.orderId].push(item)
+      }
+      for (const order of recentOrders) {
+        order.items = itemsByOrder[order.id] || []
+        order.user = order._user_id ? { id: order._user_id, name: order._user_name, email: order._user_email } : null
+        delete order._user_id; delete order._user_name; delete order._user_email
+      }
+    }
+
     const statusMap: Record<string, number> = {}
     ordersByStatus.forEach((s) => {
-      statusMap[s.status] = s._count
+      statusMap[s.status] = s.count
     })
 
     return NextResponse.json({

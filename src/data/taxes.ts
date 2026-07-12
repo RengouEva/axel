@@ -1,5 +1,4 @@
-import "server-only"
-import { prisma } from "@/lib/prisma"
+import { queryAll, queryOne, execute } from "@/lib/db"
 
 export interface TaxRate {
   id?: number
@@ -10,7 +9,7 @@ export interface TaxRate {
 
 export async function getTaxRate(countryId: string): Promise<number> {
   try {
-    const rate = await prisma.taxRate.findUnique({ where: { countryId } })
+    const rate = await queryOne<TaxRate>("SELECT * FROM TaxRate WHERE countryId = ?", [countryId])
     return rate?.rate ?? 19.25
   } catch {
     return 19.25
@@ -19,7 +18,7 @@ export async function getTaxRate(countryId: string): Promise<number> {
 
 export async function getAllTaxRates(): Promise<TaxRate[]> {
   try {
-    return await prisma.taxRate.findMany({ orderBy: { countryId: "asc" } })
+    return await queryAll<TaxRate>("SELECT * FROM TaxRate ORDER BY countryId ASC")
   } catch {
     return []
   }
@@ -27,11 +26,12 @@ export async function getAllTaxRates(): Promise<TaxRate[]> {
 
 export async function saveTaxRates(rates: TaxRate[]): Promise<void> {
   for (const rate of rates) {
-    await prisma.taxRate.upsert({
-      where: { countryId: rate.countryId },
-      update: { rate: rate.rate, label: rate.label },
-      create: { countryId: rate.countryId, rate: rate.rate, label: rate.label },
-    })
+    const existing = await queryOne<TaxRate>("SELECT * FROM TaxRate WHERE countryId = ?", [rate.countryId])
+    if (existing) {
+      await execute("UPDATE TaxRate SET rate = ?, label = ? WHERE countryId = ?", [rate.rate, rate.label, rate.countryId])
+    } else {
+      await execute("INSERT INTO TaxRate (countryId, rate, label) VALUES (?, ?, ?)", [rate.countryId, rate.rate, rate.label])
+    }
   }
 }
 

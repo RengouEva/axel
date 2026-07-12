@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll, execute } from "@/lib/db"
 import { getCountries, getCities, getDistricts } from "@/data/delivery"
 import { validateInput, deliveryCreateSchema, deliveryAssignSchema, deliveryStatusSchema } from "@/lib/validations"
 import { requireAuth, requireRole } from "@/lib/require-auth"
@@ -28,52 +28,52 @@ export async function GET(request: Request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")))
 
-    const missionWhere: Record<string, unknown> = {}
-    if (missionId) missionWhere.id = missionId
-    if (personId) missionWhere.deliveryPersonId = personId
-    if (countryId) missionWhere.countryId = countryId
-    if (cityId) missionWhere.cityId = cityId
-    if (districtId) missionWhere.districtId = districtId
+    const missionConditions: string[] = []
+    const missionParams: unknown[] = []
+    if (missionId) { missionConditions.push("m.id = ?"); missionParams.push(missionId) }
+    if (personId) { missionConditions.push("m.deliveryPersonId = ?"); missionParams.push(personId) }
+    if (countryId) { missionConditions.push("m.countryId = ?"); missionParams.push(countryId) }
+    if (cityId) { missionConditions.push("m.cityId = ?"); missionParams.push(cityId) }
+    if (districtId) { missionConditions.push("m.districtId = ?"); missionParams.push(districtId) }
+    const missionWhere = missionConditions.length > 0 ? "WHERE " + missionConditions.join(" AND ") : ""
 
-    const personWhere: Record<string, unknown> = {}
-    if (countryId) personWhere.countryId = countryId
-    if (cityId) personWhere.cityId = cityId
-    if (districtId) personWhere.districtId = districtId
-    if (personId) personWhere.id = personId
+    const personConditions: string[] = []
+    const personParams: unknown[] = []
+    if (countryId) { personConditions.push("countryId = ?"); personParams.push(countryId) }
+    if (cityId) { personConditions.push("cityId = ?"); personParams.push(cityId) }
+    if (districtId) { personConditions.push("districtId = ?"); personParams.push(districtId) }
+    if (personId) { personConditions.push("id = ?"); personParams.push(personId) }
+    const personWhere = personConditions.length > 0 ? "WHERE " + personConditions.join(" AND ") : ""
 
-    const [missions, persons, totalMissions, countries, cities, districts] = await Promise.all([
-      prisma.deliveryMission.findMany({
-        where: missionWhere,
-        include: { deliveryPerson: true },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.deliveryPerson.findMany({
-        where: personWhere,
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          avatar: true,
-          countryId: true,
-          cityId: true,
-          districtId: true,
-          available: true,
-          rating: true,
-          kycStatus: true,
-          missionsCount: true,
-          coordinates: true,
-        },
-      }),
-      prisma.deliveryMission.count({ where: missionWhere }),
+    const [missions, persons, totalMissionsRow, countries, cities, districts] = await Promise.all([
+      queryAll<any>(
+        `SELECT m.*, p.id as _person_id, p.name as _person_name, p.phone as _person_phone, p.avatar as _person_avatar, p.available as _person_available, p.rating as _person_rating
+         FROM DeliveryMission m LEFT JOIN DeliveryPerson p ON p.id = m.deliveryPersonId ${missionWhere} ORDER BY m.createdAt DESC LIMIT ? OFFSET ?`,
+        [...missionParams, limit, (page - 1) * limit]
+      ),
+      queryAll<any>(
+        `SELECT id, name, phone, avatar, countryId, cityId, districtId, available, rating, kycStatus, missionsCount, coordinates FROM DeliveryPerson ${personWhere}`,
+        personParams
+      ),
+      queryOne<{ count: number }>(`SELECT COUNT(*) as count FROM DeliveryMission m ${missionWhere}`, missionParams),
       getCountries(),
       getCities(),
       getDistricts(),
     ])
 
+    const totalMissions = totalMissionsRow?.count ?? 0
+
+    const mappedMissions = missions.map((m: any) => {
+      const deliveryPerson = m._person_id ? {
+        id: m._person_id, name: m._person_name, phone: m._person_phone,
+        avatar: m._person_avatar, available: m._person_available, rating: m._person_rating
+      } : null
+      const { _person_id, _person_name, _person_phone, _person_avatar, _person_available, _person_rating, ...rest } = m
+      return { ...rest, deliveryPerson }
+    })
+
     return NextResponse.json({
-      missions,
+      missions: mappedMissions,
       persons,
       countries,
       cities,
@@ -110,16 +110,16 @@ export async function PUT(request: Request) {
       }
 
       const [mission, person] = await Promise.all([
-        prisma.deliveryMission.findUnique({ where: { id: missionId } }),
-        prisma.deliveryPerson.findUnique({ where: { id: personId } }),
+        queryOne<any>("SELECT * FROM DeliveryMission WHERE id = ?", [missionId]),
+        queryOne<any>("SELECT * FROM DeliveryPerson WHERE id = ?", [personId]),
       ])
       if (!mission) return NextResponse.json({ error: "Mission non trouvée" }, { status: 404 })
       if (!person) return NextResponse.json({ error: "Livreur non trouvé" }, { status: 404 })
 
-      await prisma.deliveryMission.update({
-        where: { id: missionId },
-        data: { deliveryPersonId: personId, assignedAt: new Date(), status: "assigned" },
-      })
+      await execute(
+        "UPDATE DeliveryMission SET deliveryPersonId = ?, assignedAt = ?, status = ? WHERE id = ?",
+        [personId, new Date(), "assigned", missionId]
+      )
       return NextResponse.json({ success: true, message: `${person.name} assigné à la mission ${mission.id}` })
     }
 
@@ -129,20 +129,20 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: validation.error }, { status: 400 })
       }
 
-      await prisma.deliveryMission.update({
-        where: { id: missionId },
-        data: { status, completedAt: status === "delivered" ? new Date() : undefined },
-      })
+      await execute(
+        "UPDATE DeliveryMission SET status = ?, completedAt = ? WHERE id = ?",
+        [status, status === "delivered" ? new Date() : null, missionId]
+      )
       return NextResponse.json({ success: true, message: `Mission ${missionId} mise à jour: ${status}` })
     }
 
     if (action === "toggle" && personId) {
-      const person = await prisma.deliveryPerson.findUnique({ where: { id: personId } })
+      const person = await queryOne<any>("SELECT * FROM DeliveryPerson WHERE id = ?", [personId])
       if (!person) return NextResponse.json({ error: "Livreur non trouvé" }, { status: 404 })
-      await prisma.deliveryPerson.update({
-        where: { id: personId },
-        data: { available: !person.available },
-      })
+      await execute(
+        "UPDATE DeliveryPerson SET available = ? WHERE id = ?",
+        [person.available ? 0 : 1, personId]
+      )
       return NextResponse.json({ success: true, message: `Disponibilité de ${person.name} modifiée` })
     }
 
@@ -172,28 +172,21 @@ export async function POST(request: Request) {
 
     const { orderId, countryId, cityId, districtId, deliveryAddress, customerName, customerPhone } = validation.data
 
-    const shop = await prisma.shop.findFirst({
-      where: { cityId },
-      orderBy: { createdAt: "asc" },
-    })
+    const shop = await queryOne<any>(
+      "SELECT address, name FROM Shop WHERE cityId = ? ORDER BY createdAt ASC LIMIT 1",
+      [cityId]
+    )
     const pickupAddress = shop
       ? `${shop.address}, ${shop.name}`
       : "Entrepôt AXEL, Douala"
 
-    const mission = await prisma.deliveryMission.create({
-      data: {
-        id: generateMissionId(),
-        orderId,
-        countryId,
-        cityId,
-        districtId,
-        status: "pending",
-        pickupAddress,
-        deliveryAddress: deliveryAddress || "",
-        customerName: customerName || "",
-        customerPhone: customerPhone || "",
-      },
-    })
+    const missionId = generateMissionId()
+    await execute(
+      `INSERT INTO DeliveryMission (id, orderId, countryId, cityId, districtId, status, pickupAddress, deliveryAddress, customerName, customerPhone)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [missionId, orderId, countryId, cityId, districtId, "pending", pickupAddress, deliveryAddress || "", customerName || "", customerPhone || ""]
+    )
+    const mission = await queryOne<any>("SELECT * FROM DeliveryMission WHERE id = ?", [missionId])
     return NextResponse.json(mission, { status: 201 })
   } catch (error) {
     console.error("[DELIVERY_POST]", error)

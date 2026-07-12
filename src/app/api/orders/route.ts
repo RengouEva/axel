@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll, execute } from "@/lib/db"
 import { validateInput, orderCreateSchema } from "@/lib/validations"
 import { requireAuth } from "@/lib/require-auth"
 import { generateOrderId } from "@/lib/auth-utils"
@@ -16,24 +16,40 @@ export async function GET(request: Request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"))
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || String(PAGE_SIZE))))
 
-    const where: Record<string, unknown> = {}
+    const conditions: string[] = []
+    const params: unknown[] = []
     if (auth.user.role === "client") {
-      where.userId = auth.user.userId
+      conditions.push("o.userId = ?")
+      params.push(auth.user.userId)
     }
+    const whereSQL = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : ""
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        include: {
-          items: true,
-          user: { select: { id: true, name: true, email: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.order.count({ where }),
+    const [orders, totalRow] = await Promise.all([
+      queryAll<any>(
+        `SELECT o.*, u.id as _user_id, u.name as _user_name, u.email as _user_email
+         FROM \`Order\` o LEFT JOIN User u ON u.id = o.userId ${whereSQL} ORDER BY o.createdAt DESC LIMIT ? OFFSET ?`,
+        [...params, limit, (page - 1) * limit]
+      ),
+      queryOne<{ count: number }>(`SELECT COUNT(*) as count FROM \`Order\` o ${whereSQL}`, params),
     ])
+
+    const total = totalRow?.count ?? 0
+
+    if (orders.length > 0) {
+      const orderIds = orders.map(o => o.id)
+      const placeholders = orderIds.map(() => "?").join(",")
+      const allItems = await queryAll<any>(`SELECT * FROM OrderItem WHERE orderId IN (${placeholders})`, orderIds)
+      const itemsByOrder: Record<string, any[]> = {}
+      for (const item of allItems) {
+        if (!itemsByOrder[item.orderId]) itemsByOrder[item.orderId] = []
+        itemsByOrder[item.orderId].push(item)
+      }
+      for (const order of orders) {
+        order.items = itemsByOrder[order.id] || []
+        order.user = order._user_id ? { id: order._user_id, name: order._user_name, email: order._user_email } : null
+        delete order._user_id; delete order._user_name; delete order._user_email
+      }
+    }
 
     return NextResponse.json({
       orders,
@@ -66,33 +82,28 @@ export async function POST(request: Request) {
     }
 
     const { total, items, shipping } = validation.data
+    const orderId = generateOrderId()
+    const now = new Date()
 
-    const newOrder = await prisma.order.create({
-      data: {
-        id: generateOrderId(),
-        date: new Date(),
-        status: "pending",
-        total,
-        userId: auth.user.userId,
-        shippingName: shipping?.name || null,
-        shippingEmail: shipping?.email || null,
-        shippingPhone: shipping?.telephone || null,
-        shippingAddress: shipping?.address || null,
-        countryId: shipping?.countryId || null,
-        cityId: shipping?.cityId || null,
-        districtId: shipping?.districtId || null,
-        deliveryMethod: shipping?.method || null,
-        items: {
-          create: items.map((item) => ({
-            productId: item.productId,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-        },
-      },
-      include: { items: true },
-    })
+    await execute(
+      `INSERT INTO \`Order\` (id, date, status, total, userId, shippingName, shippingEmail, shippingPhone, shippingAddress, countryId, cityId, districtId, deliveryMethod)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [orderId, now, "pending", total, auth.user.userId,
+       shipping?.name || null, shipping?.email || null, shipping?.telephone || null,
+       shipping?.address || null, shipping?.countryId || null, shipping?.cityId || null,
+       shipping?.districtId || null, shipping?.method || null]
+    )
+
+    for (const item of items) {
+      await execute(
+        "INSERT INTO OrderItem (orderId, productId, name, quantity, price) VALUES (?, ?, ?, ?, ?)",
+        [orderId, item.productId, item.name, item.quantity, item.price]
+      )
+    }
+
+    const orderItems = await queryAll<any>("SELECT * FROM OrderItem WHERE orderId = ?", [orderId])
+    const newOrder = await queryOne<any>("SELECT * FROM `Order` WHERE id = ?", [orderId])
+    newOrder.items = orderItems
 
     return NextResponse.json(newOrder, { status: 201 })
   } catch (error) {

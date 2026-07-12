@@ -1,5 +1,4 @@
-import "server-only"
-import { prisma } from "@/lib/prisma"
+import { queryAll, queryOne } from "@/lib/db"
 
 export interface Shop {
   id: string
@@ -39,20 +38,16 @@ export function formatShop(s: any): Shop {
     category: s.category,
     rating: s.rating,
     totalSales: s.totalSales,
-    createdAt: s.createdAt?.toISOString?.() ?? s.createdAt,
+    createdAt: typeof s.createdAt === "string" ? s.createdAt : (s.createdAt?.toISOString?.() ?? ""),
   }
 }
 
 export async function getShops(): Promise<Shop[]> {
-  const data = await prisma.shop.findMany({
-    orderBy: { createdAt: "desc" },
-  })
+  const data = await queryAll<any>("SELECT * FROM Shop ORDER BY createdAt DESC")
   return data.map(formatShop)
 }
 
 export async function getShopBySlug(slug: string): Promise<Shop | null> {
-  const shop = await prisma.shop.findUnique({
-    where: { slug },
-  })
+  const shop = await queryOne<any>("SELECT * FROM Shop WHERE slug = ?", [slug])
   return shop ? formatShop(shop) : null
 }

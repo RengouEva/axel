@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
 
 function generateId(prefix: string): string {
@@ -19,13 +19,15 @@ async function assignSubscriptionBadges(shopId: string, plan: { hasPremiumBadge:
   if (plan.hasFeaturedBadge) badges.push({ type: "featured", ...BADGE_CONFIG.featured, assignedBy: "subscription" })
 
   for (const badge of badges) {
-    const existing = await prisma.shopBadge.findFirst({
-      where: { shopId, type: badge.type },
-    })
+    const existing = await queryOne<any>(
+      "SELECT id FROM ShopBadge WHERE shopId = ? AND type = ? LIMIT 1",
+      [shopId, badge.type]
+    )
     if (!existing) {
-      await prisma.shopBadge.create({
-        data: { id: generateId("BDG"), shopId, ...badge },
-      })
+      await execute(
+        "INSERT INTO ShopBadge (id, shopId, type, label, color, icon, assignedBy) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [generateId("BDG"), shopId, badge.type, badge.label, badge.color, badge.icon, badge.assignedBy]
+      )
     }
   }
 }
@@ -35,47 +37,59 @@ export async function GET(request: Request) {
     const auth = await requireRole(request, ["seller"])
     if (!auth.success) return auth.response
 
-    const shop = await prisma.shop.findUnique({
-      where: { sellerId: auth.user.userId },
-    })
+    const shop = await queryOne<any>("SELECT id FROM Shop WHERE sellerId = ?", [auth.user.userId])
     if (!shop) {
       return NextResponse.json({ error: "Vous n'avez pas de boutique" }, { status: 404 })
     }
 
-    const subscription = await prisma.shopSubscription.findFirst({
-      where: { shopId: shop.id, status: "active" },
-      include: { plan: true },
-      orderBy: { createdAt: "desc" },
-    })
+    const subscription = await queryOne<any>(
+      `SELECT sub.*, p.*, p.id as _plan_id
+       FROM ShopSubscription sub JOIN Plan p ON p.id = sub.planId
+       WHERE sub.shopId = ? AND sub.status = 'active' ORDER BY sub.createdAt DESC LIMIT 1`,
+      [shop.id]
+    )
 
     if (!subscription) {
       return NextResponse.json({ subscription: null })
     }
 
-    const boostsUsed = await prisma.productBoost.count({
-      where: { shopId: shop.id, status: "active" },
-    })
+    const boostsUsedRow = await queryOne<{ count: number }>(
+      "SELECT COUNT(*) as count FROM ProductBoost WHERE shopId = ? AND status = 'active'",
+      [shop.id]
+    )
+
+    const plan = {
+      id: subscription._plan_id,
+      name: subscription.name,
+      description: subscription.description,
+      price: subscription.price,
+      durationDays: subscription.durationDays,
+      maxBoosts: subscription.maxBoosts,
+      hasPremiumBadge: subscription.hasPremiumBadge,
+      hasVerifiedBadge: subscription.hasVerifiedBadge,
+      hasFeaturedBadge: subscription.hasFeaturedBadge,
+    }
 
     return NextResponse.json({
       subscription: {
         id: subscription.id,
         planId: subscription.planId,
-        planName: subscription.plan.name,
-        planDescription: subscription.plan.description,
-        price: subscription.plan.price,
+        planName: plan.name,
+        planDescription: plan.description,
+        price: plan.price,
         startDate: subscription.startDate,
         endDate: subscription.endDate,
         status: subscription.status,
         autoRenew: subscription.autoRenew,
         badgesIncluded: (
           [
-            subscription.plan.hasPremiumBadge && "Premium",
-            subscription.plan.hasVerifiedBadge && "Vérifié",
-            subscription.plan.hasFeaturedBadge && "Mis en avant",
+            plan.hasPremiumBadge && "Premium",
+            plan.hasVerifiedBadge && "Vérifié",
+            plan.hasFeaturedBadge && "Mis en avant",
           ] as (string | false)[]
         ).filter(Boolean) as string[],
-        boostsIncluded: subscription.plan.maxBoosts,
-        boostsUsed,
+        boostsIncluded: plan.maxBoosts,
+        boostsUsed: boostsUsedRow?.count ?? 0,
       },
     })
   } catch (error) {
@@ -89,9 +103,7 @@ export async function POST(request: Request) {
     const auth = await requireRole(request, ["seller"])
     if (!auth.success) return auth.response
 
-    const shop = await prisma.shop.findUnique({
-      where: { sellerId: auth.user.userId },
-    })
+    const shop = await queryOne<any>("SELECT id FROM Shop WHERE sellerId = ?", [auth.user.userId])
     if (!shop) {
       return NextResponse.json({ error: "Vous n'avez pas de boutique" }, { status: 404 })
     }
@@ -101,14 +113,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "planId est requis" }, { status: 400 })
     }
 
-    const plan = await prisma.plan.findUnique({ where: { id: planId } })
+    const plan = await queryOne<any>("SELECT * FROM Plan WHERE id = ?", [planId])
     if (!plan || !plan.isActive) {
       return NextResponse.json({ error: "Plan non trouvé ou inactif" }, { status: 404 })
     }
 
-    const existingSubscription = await prisma.shopSubscription.findFirst({
-      where: { shopId: shop.id, status: "active" },
-    })
+    const existingSubscription = await queryOne<any>(
+      "SELECT id FROM ShopSubscription WHERE shopId = ? AND status = 'active' LIMIT 1",
+      [shop.id]
+    )
     if (existingSubscription) {
       return NextResponse.json(
         { error: "Vous avez déjà un abonnement actif" },
@@ -120,17 +133,13 @@ export async function POST(request: Request) {
     const endDate = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000)
 
     if (plan.price > 0) {
-      const transaction = await prisma.transaction.create({
-        data: {
-          id: generateId("TXN"),
-          shopId: shop.id,
-          userId: auth.user.userId,
-          amount: plan.price,
-          type: "subscription",
-          status: "pending",
-          metadata: JSON.stringify({ planId: plan.id, startDate: now.toISOString(), endDate: endDate.toISOString() }),
-        },
-      })
+      const txnId = generateId("TXN")
+      await execute(
+        "INSERT INTO Transaction (id, shopId, userId, amount, type, status, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [txnId, shop.id, auth.user.userId, plan.price, "subscription", "pending",
+         JSON.stringify({ planId: plan.id, startDate: now.toISOString(), endDate: endDate.toISOString() })]
+      )
+      const transaction = await queryOne<any>("SELECT * FROM Transaction WHERE id = ?", [txnId])
 
       return NextResponse.json({
         requiresPayment: true,
@@ -139,28 +148,18 @@ export async function POST(request: Request) {
       })
     }
 
-    const subscription = await prisma.shopSubscription.create({
-      data: {
-        id: generateId("SUB"),
-        shopId: shop.id,
-        planId: plan.id,
-        startDate: now,
-        endDate,
-        status: "active",
-      },
-    })
+    const subId = generateId("SUB")
+    await execute(
+      "INSERT INTO ShopSubscription (id, shopId, planId, startDate, endDate, status) VALUES (?, ?, ?, ?, ?, ?)",
+      [subId, shop.id, plan.id, now, endDate, "active"]
+    )
+    const subscription = await queryOne<any>("SELECT * FROM ShopSubscription WHERE id = ?", [subId])
 
-    await prisma.transaction.create({
-      data: {
-        id: generateId("TXN"),
-        shopId: shop.id,
-        userId: auth.user.userId,
-        amount: 0,
-        type: "subscription",
-        status: "completed",
-        metadata: JSON.stringify({ planId: plan.id, subscriptionId: subscription.id }),
-      },
-    })
+    await execute(
+      "INSERT INTO Transaction (id, shopId, userId, amount, type, status, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [generateId("TXN"), shop.id, auth.user.userId, 0, "subscription", "completed",
+       JSON.stringify({ planId: plan.id, subscriptionId: subscription.id })]
+    )
 
     await assignSubscriptionBadges(shop.id, plan)
 

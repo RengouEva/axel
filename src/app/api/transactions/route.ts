@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { requireAuth, requireRole } from "@/lib/require-auth"
+import { queryOne, queryAll } from "@/lib/db"
+import { requireAuth } from "@/lib/require-auth"
 
 export async function GET(request: Request) {
   try {
@@ -13,29 +13,38 @@ export async function GET(request: Request) {
 
     const isAdmin = auth.user.role === "admin"
 
-    let where = {}
+    let conditions: string[] = []
+    let params: unknown[] = []
     if (!isAdmin) {
-      const shop = await prisma.shop.findUnique({
-        where: { sellerId: auth.user.userId },
-      })
+      const shop = await queryOne<any>("SELECT id FROM Shop WHERE sellerId = ?", [auth.user.userId])
       if (!shop) {
         return NextResponse.json({ error: "Vous n'avez pas de boutique" }, { status: 404 })
       }
-      where = { shopId: shop.id }
+      conditions.push("t.shopId = ?")
+      params.push(shop.id)
     }
+    const whereSQL = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : ""
 
-    const [transactions, total] = await Promise.all([
-      prisma.transaction.findMany({
-        where,
-        include: isAdmin
-          ? { shop: { select: { id: true, name: true } }, user: { select: { id: true, name: true } } }
-          : undefined,
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.transaction.count({ where }),
+    const [transactions, totalRow] = await Promise.all([
+      queryAll<any>(
+        isAdmin
+          ? `SELECT t.*, s.id as _shop_id, s.name as _shop_name, u.id as _user_id, u.name as _user_name
+             FROM \`Transaction\` t LEFT JOIN Shop s ON s.id = t.shopId LEFT JOIN User u ON u.id = t.userId ${whereSQL} ORDER BY t.createdAt DESC LIMIT ? OFFSET ?`
+          : `SELECT t.* FROM \`Transaction\` t ${whereSQL} ORDER BY t.createdAt DESC LIMIT ? OFFSET ?`,
+        isAdmin ? [...params, limit, (page - 1) * limit] : [...params, limit, (page - 1) * limit]
+      ),
+      queryOne<{ count: number }>(`SELECT COUNT(*) as count FROM \`Transaction\` t ${whereSQL}`, params),
     ])
+
+    const total = totalRow?.count ?? 0
+
+    if (isAdmin) {
+      for (const t of transactions as any[]) {
+        t.shop = t._shop_id ? { id: t._shop_id, name: t._shop_name } : null
+        t.user = t._user_id ? { id: t._user_id, name: t._user_name } : null
+        delete t._shop_id; delete t._shop_name; delete t._user_id; delete t._user_name
+      }
+    }
 
     return NextResponse.json({
       transactions,

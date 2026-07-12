@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, execute } from "@/lib/db"
 import { requireAuth } from "@/lib/require-auth"
 
 function generateId(prefix: string): string {
@@ -16,13 +16,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "transactionId est requis" }, { status: 400 })
     }
 
-    const shop = await prisma.shop.findFirst({
-      where: { sellerId: auth.user.userId },
-    })
+    const shop = await queryOne<any>(
+      "SELECT id FROM Shop WHERE sellerId = ? LIMIT 1",
+      [auth.user.userId]
+    )
 
-    const transaction = await prisma.transaction.findUnique({
-      where: { id: transactionId },
-    })
+    const transaction = await queryOne<any>("SELECT * FROM `Transaction` WHERE id = ?", [transactionId])
 
     if (!transaction) {
       return NextResponse.json({ error: "Transaction non trouvée" }, { status: 404 })
@@ -38,10 +37,7 @@ export async function POST(request: Request) {
 
     const reference = `PAY-${Date.now().toString(36).toUpperCase()}-${generateId("REF")}`
 
-    await prisma.transaction.update({
-      where: { id: transactionId },
-      data: { reference },
-    })
+    await execute("UPDATE `Transaction` SET reference = ? WHERE id = ?", [reference, transactionId])
 
     const mockPaymentUrl = `https://payments.example.com/checkout/${reference}`
 

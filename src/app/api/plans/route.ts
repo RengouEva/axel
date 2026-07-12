@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll, execute } from "@/lib/db"
 import { validateInput, planCreateSchema } from "@/lib/validations"
 import { requireRole } from "@/lib/require-auth"
 
@@ -12,14 +12,13 @@ export async function GET(request: Request) {
       const auth = await requireRole(request, ["admin"])
       if (!auth.success) return auth.response
 
-      const plans = await prisma.plan.findMany({ orderBy: { price: "asc" } })
+      const plans = await queryAll<any>("SELECT * FROM Plan ORDER BY price ASC")
       return NextResponse.json(plans)
     }
 
-    const plans = await prisma.plan.findMany({
-      where: { isActive: true },
-      orderBy: { price: "asc" },
-    })
+    const plans = await queryAll<any>(
+      "SELECT * FROM Plan WHERE isActive = 1 ORDER BY price ASC"
+    )
     return NextResponse.json(plans)
   } catch (error) {
     console.error("[PLANS_GET]", error)
@@ -38,7 +37,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    const plan = await prisma.plan.create({ data: validation.data })
+    const data = validation.data as Record<string, unknown>
+    const fields = Object.keys(data)
+    const placeholders = fields.map(() => "?").join(", ")
+    const values = Object.values(data)
+    const result = await execute(`INSERT INTO Plan (${fields.join(", ")}) VALUES (${placeholders})`, values)
+    const plan = await queryOne<any>("SELECT * FROM Plan WHERE id = ?", [result.insertId])
     return NextResponse.json(plan, { status: 201 })
   } catch (error) {
     console.error("[PLANS_POST]", error)

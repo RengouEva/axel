@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, queryAll, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
 
 function generateId(prefix: string): string {
@@ -22,7 +22,7 @@ export async function POST(
 
     const { id } = await params
 
-    const shop = await prisma.shop.findUnique({ where: { id } })
+    const shop = await queryOne<any>("SELECT id FROM Shop WHERE id = ?", [id])
     if (!shop) {
       return NextResponse.json({ error: "Boutique non trouvée" }, { status: 404 })
     }
@@ -42,20 +42,13 @@ export async function POST(
     if (hasVerifiedBadge) badgesToAssign.push("verified")
     if (hasFeaturedBadge) badgesToAssign.push("featured")
 
-    await prisma.transaction.create({
-      data: {
-        id: generateId("TXN"),
-        shopId: shop.id,
-        userId: auth.user.userId,
-        amount: 0,
-        type: "manual",
-        status: "completed",
-        metadata: JSON.stringify({ assignedBy: auth.user.userId, planId, assignBadges }),
-      },
-    })
+    await execute(
+      "INSERT INTO Transaction (id, shopId, userId, amount, type, status, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [generateId("TXN"), shop.id, auth.user.userId, 0, "manual", "completed", JSON.stringify({ assignedBy: auth.user.userId, planId, assignBadges })]
+    )
 
     if (planId) {
-      const plan = await prisma.plan.findUnique({ where: { id: planId } })
+      const plan = await queryOne<any>("SELECT * FROM Plan WHERE id = ?", [planId])
       if (!plan) {
         return NextResponse.json({ error: "Plan non trouvé" }, { status: 404 })
       }
@@ -63,16 +56,10 @@ export async function POST(
       const now = new Date()
       const endDate = new Date(now.getTime() + (durationDays || plan.durationDays) * 24 * 60 * 60 * 1000)
 
-      await prisma.shopSubscription.create({
-        data: {
-          id: generateId("SUB"),
-          shopId: shop.id,
-          planId: plan.id,
-          startDate: now,
-          endDate,
-          status: "active",
-        },
-      })
+      await execute(
+        "INSERT INTO ShopSubscription (id, shopId, planId, startDate, endDate, status) VALUES (?, ?, ?, ?, ?, ?)",
+        [generateId("SUB"), shop.id, plan.id, now, endDate, "active"]
+      )
     }
 
     if (badgesToAssign.length > 0) {
@@ -80,29 +67,27 @@ export async function POST(
         const config = BADGE_CONFIG[badgeType]
         if (!config) continue
 
-        const existing = await prisma.shopBadge.findFirst({
-          where: { shopId: shop.id, type: badgeType },
-        })
+        const existing = await queryOne<any>(
+          "SELECT id FROM ShopBadge WHERE shopId = ? AND type = ? LIMIT 1",
+          [shop.id, badgeType]
+        )
         if (!existing) {
-          await prisma.shopBadge.create({
-            data: {
-              id: generateId("BDG"),
-              shopId: shop.id,
-              type: badgeType,
-              label: config.label,
-              color: config.color,
-              icon: config.icon,
-              assignedBy: "admin",
-            },
-          })
+          await execute(
+            "INSERT INTO ShopBadge (id, shopId, type, label, color, icon, assignedBy) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [generateId("BDG"), shop.id, badgeType, config.label, config.color, config.icon, "admin"]
+          )
         }
       }
     }
 
-    const updatedShop = await prisma.shop.findUnique({
-      where: { id },
-      include: { badges: true, subscriptions: { where: { status: "active" } } },
-    })
+    const updatedShop = await queryOne<any>("SELECT * FROM Shop WHERE id = ?", [id])
+    const badges = await queryAll<any>("SELECT * FROM ShopBadge WHERE shopId = ?", [id])
+    const subscriptions = await queryAll<any>(
+      "SELECT * FROM ShopSubscription WHERE shopId = ? AND status = 'active'",
+      [id]
+    )
+    updatedShop.badges = badges
+    updatedShop.subscriptions = subscriptions
 
     return NextResponse.json(updatedShop)
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, execute } from "@/lib/db"
 import { hashPassword, verifyPassword, createToken } from "@/lib/auth-utils"
 import { validateInput, loginSchema, registerSchema } from "@/lib/validations"
 import { checkAuthRateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: validation.error }, { status: 400 })
       }
 
-      const user = await prisma.user.findUnique({ where: { email } })
+      const user = await queryOne<any>("SELECT * FROM User WHERE email = ?", [email])
       if (!user) {
         return NextResponse.json({ error: "Email ou mot de passe incorrect" }, { status: 401 })
       }
@@ -60,16 +60,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: validation.error }, { status: 400 })
       }
 
-      const existing = await prisma.user.findUnique({ where: { email } })
+      const existing = await queryOne<any>("SELECT id FROM User WHERE email = ?", [email])
       if (existing) {
         return NextResponse.json({ error: "Cet email est déjà utilisé" }, { status: 409 })
       }
 
       const hashedPassword = await hashPassword(password)
       const userRole = validation.data.role || "client"
-      const newUser = await prisma.user.create({
-        data: { name, email, password: hashedPassword, role: userRole },
-      })
+
+      const result = await execute(
+        "INSERT INTO User (name, email, password, role) VALUES (?, ?, ?, ?)",
+        [name, email, hashedPassword, userRole]
+      )
+      const newUser = await queryOne<any>("SELECT * FROM User WHERE id = ?", [result.insertId])
 
       const token = await createToken({
         userId: newUser.id,

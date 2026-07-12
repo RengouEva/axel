@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
+import { queryOne, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
 
 function generateId(prefix: string): string {
@@ -16,14 +16,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "productId est requis" }, { status: 400 })
     }
 
-    const product = await prisma.product.findUnique({ where: { id: productId } })
+    const product = await queryOne<any>("SELECT * FROM Product WHERE id = ?", [productId])
     if (!product) {
       return NextResponse.json({ error: "Produit non trouvé" }, { status: 404 })
     }
 
-    const existingBoost = await prisma.productBoost.findFirst({
-      where: { productId, status: "active" },
-    })
+    const existingBoost = await queryOne<any>(
+      "SELECT id FROM ProductBoost WHERE productId = ? AND status = 'active' LIMIT 1",
+      [productId]
+    )
     if (existingBoost) {
       return NextResponse.json(
         { error: "Ce produit est déjà en boost actif" },
@@ -34,32 +35,20 @@ export async function POST(request: Request) {
     const now = new Date()
     const days = durationDays || 30
     const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000)
-    const boostData: any = {
-      id: generateId("BST"),
-      product: { connect: { id: productId } },
-      startDate: now,
-      endDate,
-      status: "active",
-    }
-    if (product.shopId) boostData.shopId = product.shopId
-    const boost = await prisma.productBoost.create({ data: boostData })
+    const boostId = generateId("BST")
 
-    await prisma.transaction.create({
-      data: {
-        id: generateId("TXN"),
-        shopId: product.shopId,
-        userId: auth.user.userId,
-        amount: 0,
-        type: "boost",
-        status: "completed",
-        metadata: JSON.stringify({
-          productId,
-          durationDays: days,
-          assignedBy: auth.user.userId,
-          adminBoost: true,
-        }),
-      },
-    })
+    await execute(
+      "INSERT INTO ProductBoost (id, productId, shopId, startDate, endDate, status) VALUES (?, ?, ?, ?, ?, ?)",
+      [boostId, productId, product.shopId || null, now, endDate, "active"]
+    )
+
+    await execute(
+      "INSERT INTO Transaction (id, shopId, userId, amount, type, status, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [generateId("TXN"), product.shopId || null, auth.user.userId, 0, "boost", "completed",
+       JSON.stringify({ productId, durationDays: days, assignedBy: auth.user.userId, adminBoost: true })]
+    )
+
+    const boost = await queryOne<any>("SELECT * FROM ProductBoost WHERE id = ?", [boostId])
 
     return NextResponse.json({ boost, free: true })
   } catch (error) {
