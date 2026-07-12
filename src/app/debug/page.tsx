@@ -23,9 +23,13 @@ export default async function DebugPage() {
 
   let dbStatus = "inaccessible"
   let dbError = ""
+  let tables: string[] = []
   try {
     await prisma.$connect()
     dbStatus = "connecté"
+    // @ts-expect-error
+    const result = await prisma.$queryRaw`SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ${process.env.DB_NAME || "u658795094_axel"}`
+    tables = (result as { TABLE_NAME: string }[]).map(r => r.TABLE_NAME)
     await prisma.$disconnect()
   } catch (e: unknown) {
     const err = e as { message?: string }
@@ -35,7 +39,7 @@ export default async function DebugPage() {
   return (
     <div style={{ padding: "2rem", fontFamily: "monospace", maxWidth: "800px", margin: "0 auto" }}>
       <h1 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>Debug</h1>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "1rem" }}>
         <thead>
           <tr style={{ background: "#f5f5f5" }}>
             <th style={{ padding: "0.5rem", border: "1px solid #ccc", textAlign: "left" }}>Variable</th>
@@ -49,13 +53,23 @@ export default async function DebugPage() {
               <td style={{ padding: "0.5rem", border: "1px solid #ccc", wordBreak: "break-all" }}>{mask(val)}</td>
             </tr>
           ))}
+        </tbody>
+      </table>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <tbody>
           <tr>
             <td style={{ fontWeight: "bold", padding: "0.5rem", border: "1px solid #ccc" }}>Connexion DB</td>
             <td style={{ padding: "0.5rem", border: "1px solid #ccc", color: dbStatus === "connecté" ? "green" : "red" }}>{dbStatus}</td>
           </tr>
+          {tables.length > 0 && (
+            <tr>
+              <td style={{ fontWeight: "bold", padding: "0.5rem", border: "1px solid #ccc" }}>Tables ({tables.length})</td>
+              <td style={{ padding: "0.5rem", border: "1px solid #ccc" }}>{tables.join(", ")}</td>
+            </tr>
+          )}
           {dbError && (
             <tr>
-              <td style={{ fontWeight: "bold", padding: "0.5rem", border: "1px solid #ccc" }}>Erreur DB</td>
+              <td style={{ fontWeight: "bold", padding: "0.5rem", border: "1px solid #ccc" }}>Erreur</td>
               <td style={{ padding: "0.5rem", border: "1px solid #ccc", color: "red", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{dbError}</td>
             </tr>
           )}
