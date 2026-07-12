@@ -27,7 +27,6 @@ export default async function DebugPage() {
   try {
     await prisma.$connect()
     dbStatus = "connecté"
-    // @ts-expect-error
     const result = await prisma.$queryRaw`SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ${process.env.DB_NAME || "u658795094_axel"}`
     tables = (result as { TABLE_NAME: string }[]).map(r => r.TABLE_NAME)
     await prisma.$disconnect()
