@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next"
 import { getProducts } from "@/data/products"
 import { getCategories } from "@/data/categories"
 
+export const dynamic = 'force-dynamic'
+
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://axel.marketplace"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
