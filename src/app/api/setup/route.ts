@@ -3,8 +3,6 @@ import { NextResponse } from "next/server"
 
 export const dynamic = 'force-dynamic'
 
-const PRISMA = "./node_modules/.bin/prisma"
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const key = searchParams.get("key")
@@ -23,8 +21,19 @@ export async function GET(request: Request) {
     const name = process.env.DB_NAME || "u658795094_axel"
     const url = `mysql://${user}:${encodeURIComponent(pass)}@${host}:${port}/${name}`
 
+    let prismaCli: string
+    try {
+      prismaCli = require.resolve("prisma/build/index.js")
+    } catch {
+      prismaCli = ""
+    }
+
+    if (!prismaCli) {
+      return NextResponse.json({ success: false, logs: results, error: "Prisma CLI introuvable" }, { status: 500 })
+    }
+
     results.push("Running prisma db push...")
-    execSync(`${PRISMA} db push`, { env: { ...process.env, DATABASE_URL: url }, stdio: "pipe" })
+    execSync(`node "${prismaCli}" db push`, { env: { ...process.env, DATABASE_URL: url }, stdio: "pipe" })
     results.push("Tables créées avec succès")
 
     results.push("Running prisma seed...")

@@ -7,7 +7,17 @@ const pass = process.env.DB_PASSWORD || ""
 const name = process.env.DB_NAME || "u658795094_axel"
 
 const url = `mysql://${user}:${encodeURIComponent(pass)}@${host}:${port}/${name}`
-process.env.DATABASE_URL = url
 
-execSync("npx prisma db push", { stdio: "inherit", env: { ...process.env, DATABASE_URL: url } })
-execSync("npx prisma generate", { stdio: "inherit", env: { ...process.env, DATABASE_URL: url } })
+try {
+  execSync("npx prisma db push", { stdio: "inherit", env: { ...process.env, DATABASE_URL: url } })
+  console.log("Tables created successfully")
+} catch (e) {
+  console.warn("prisma db push failed (non-fatal):", e.message)
+}
+
+try {
+  execSync("node prisma/seed.js", { stdio: "inherit", env: { ...process.env, DATABASE_URL: url } })
+  console.log("Seed data inserted successfully")
+} catch (e) {
+  console.warn("prisma seed failed (non-fatal):", e.message)
+}
