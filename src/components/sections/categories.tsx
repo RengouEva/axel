@@ -5,7 +5,6 @@ import {
   Smartphone, Laptop, Tv, Refrigerator, Shirt, Sparkles,
   Sofa, Trophy, Car, Building2, ShoppingCart, Settings
 } from "lucide-react"
-import { getCategories } from "@/data/categories"
 import type { Category } from "@/data/categories"
 import { AnimatedDiv } from "@/lib/animations"
 
@@ -19,7 +18,7 @@ export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([])
 
   useEffect(() => {
-    getCategories().then(setCategories)
+    fetch("/api/categories").then(r => r.json()).then(d => setCategories(d.categories || []))
   }, [])
 
   return (
