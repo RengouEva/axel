@@ -1,4 +1,5 @@
 import { queryAll, queryOne } from "@/lib/db"
+import { cached } from "@/lib/cache"
 
 export interface Country {
   id: string
@@ -68,15 +69,15 @@ export interface ProductStock {
 }
 
 export async function getCountries(): Promise<Country[]> {
-  return await queryAll<Country>("SELECT * FROM Country ORDER BY name ASC")
+  return cached("countries", () => queryAll<Country>("SELECT * FROM Country ORDER BY name ASC"), 86_400_000)
 }
 
 export async function getCities(): Promise<City[]> {
-  return await queryAll<City>("SELECT * FROM City ORDER BY name ASC")
+  return cached("cities", () => queryAll<City>("SELECT * FROM City ORDER BY name ASC"), 86_400_000)
 }
 
 export async function getDistricts(): Promise<District[]> {
-  return await queryAll<District>("SELECT * FROM District ORDER BY name ASC")
+  return cached("districts", () => queryAll<District>("SELECT * FROM District ORDER BY name ASC"), 86_400_000)
 }
 
 function parsePerson(p: any): DeliveryPerson {

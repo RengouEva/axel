@@ -1,4 +1,5 @@
 import { queryAll, queryOne } from "@/lib/db"
+import { cached } from "@/lib/cache"
 
 export interface Product {
   id: number
@@ -66,6 +67,7 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
+  return cached(`product:${slug}`, async () => {
   const product = await queryOne<any>(
     `SELECT p.*, s.id as shop_id, s.name as shop_name, s.slug as shop_slug,
             s.logo as shop_logo, s.category as shop_category
@@ -75,6 +77,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     [slug]
   )
   return product ? formatProduct(product) : null
+  }, 60_000)
 }
 
 export async function getProductsByCategory(category: string): Promise<Product[]> {
@@ -104,6 +107,7 @@ export async function getProductsByShop(shopSlug: string): Promise<Product[]> {
 }
 
 export async function getPromotedProducts(): Promise<Product[]> {
+  return cached("promoted-products", async () => {
   const data = await queryAll<any>(
     `SELECT p.*, s.id as shop_id, s.name as shop_name, s.slug as shop_slug,
             s.logo as shop_logo, s.category as shop_category
@@ -113,9 +117,11 @@ export async function getPromotedProducts(): Promise<Product[]> {
      ORDER BY p.createdAt DESC`
   )
   return formatProductList(data)
+  }, 60_000)
 }
 
 export async function getNewProducts(limit: number = 4): Promise<Product[]> {
+  return cached("new-products", async () => {
   const data = await queryAll<any>(
     `SELECT p.*, s.id as shop_id, s.name as shop_name, s.slug as shop_slug,
             s.logo as shop_logo, s.category as shop_category
@@ -126,4 +132,5 @@ export async function getNewProducts(limit: number = 4): Promise<Product[]> {
     [limit]
   )
   return formatProductList(data)
+  }, 60_000)
 }
