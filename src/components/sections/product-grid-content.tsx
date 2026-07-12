@@ -3,12 +3,21 @@
 import { ShoppingCart, Star, Eye, Zap, Store, Heart } from "lucide-react"
 import Button from "@/components/ui/button"
 import Badge from "@/components/ui/badge"
-import type { Product } from "@/data/products"
 import { AnimatedDiv } from "@/lib/animations"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
 import { useCompare } from "@/lib/compare-context"
 import Link from "next/link"
+
+interface Product {
+  id: number; name: string; brand: string; category: string; price: number
+  monthlyPrice: number; rating: number; reviews: number; inStock: boolean
+  promotion: boolean; image: string; images: string[]; slug: string
+  creditRates?: string; description?: string; shopId?: string
+  shop?: { id: string; name: string; slug: string; logo: string; category: string; badges?: { type: string; label: string; color: string; icon?: string }[] }
+  badges?: { type: string; label: string; color: string; icon?: string }[]
+  boosted?: boolean
+}
 
 export default function ProductGridContent({ products }: { products: Product[] }) {
   const { toggleFavorite, isFavorite } = useFavorites()
