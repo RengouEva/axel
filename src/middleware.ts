@@ -37,6 +37,7 @@ const API_PUBLIC_ROUTES = [
   "/api/credit",
   "/api/upload",
   "/api/debug",
+  "/api/setup",
 ]
 
 const API_READ_ROUTES = [
