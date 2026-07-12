@@ -40,11 +40,15 @@ export default function CreditPage() {
   const activeApplications = applications.filter((a) => a.status === "pre-approved" || a.status === "approved")
   const pastApplications = applications.filter((a) => a.status === "completed" || a.status === "rejected")
 
+  const nextDate = new Date()
+  nextDate.setDate(15)
+  if (nextDate < new Date()) nextDate.setMonth(nextDate.getMonth() + 1)
+
   const currentCredit = applications[0] ? {
     total: applications[0].totalRepayment,
     restant: Math.round(applications[0].totalRepayment * 2 / 3),
     mensualite: applications[0].monthlyPayment,
-    prochaineEcheance: "15 Juillet 2026",
+    prochaineEcheance: nextDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
     taux: applications[0].rate,
     duree: applications[0].duration,
     moisRestants: Math.round(applications[0].duration * 2 / 3),

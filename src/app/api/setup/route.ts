@@ -399,8 +399,13 @@ const TAX_SEED = [
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const key = searchParams.get("key")
+  const expectedKey = process.env.SETUP_SECRET_KEY
 
-  if (key !== "axel-setup-2024") {
+  if (!expectedKey) {
+    return NextResponse.json({ error: "Setup non configuré (SETUP_SECRET_KEY manquant)" }, { status: 503 })
+  }
+
+  if (key !== expectedKey) {
     return NextResponse.json({ error: "Clé invalide" }, { status: 403 })
   }
 

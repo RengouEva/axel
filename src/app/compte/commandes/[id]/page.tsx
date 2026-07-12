@@ -1,45 +1,54 @@
 ﻿"use client"
 
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Package, ArrowLeft, MapPin, CreditCard, Truck, CheckCircle, Clock } from "lucide-react"
 import Button from "@/components/ui/button"
 import Badge from "@/components/ui/badge"
+import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
 
-const orders = [
-  { id: "AXEL-2024-001", date: "15 Juin 2026", status: "Livré", total: "1 599 000 F", items: 1, product: "iPhone 16 Pro Max", image: "/images/products/iphone-16-pro-max.svg", address: "Abidjan, Cocody, Riviera 3", payment: "Carte bancaire", delivery: "Standard (48h)" },
-  { id: "AXEL-2024-002", date: "20 Juin 2026", status: "En cours", total: "899 000 F", items: 1, product: "PlayStation 6 Pro", image: "/images/products/playstation-6-pro.svg", address: "Abidjan, Plateau", payment: "Crédit AXEL", delivery: "Express (24h)" },
-  { id: "AXEL-2024-003", date: "25 Juin 2026", status: "Traitement", total: "299 000 F", items: 1, product: "AirPods Pro 3", image: "/images/products/airpods-pro-3.svg", address: "Dakar, Almadies", payment: "Carte bancaire", delivery: "Standard (48h)" },
-]
-
 const statusColors: Record<string, "promo" | "stock" | "credit"> = {
-  "Livré": "stock",
-  "En cours": "credit",
-  "Traitement": "promo",
+  "delivered": "stock",
+  "shipped": "credit",
+  "processing": "promo",
+  "pending": "credit",
+  "cancelled": "promo",
 }
 
-const steps: Record<string, { label: string; date: string }[]> = {
-  "Livré": [
-    { label: "Commande confirmée", date: "15 Juin 2026" },
-    { label: "Préparation en cours", date: "15 Juin 2026" },
-    { label: "Expédié", date: "16 Juin 2026" },
-    { label: "Livré", date: "17 Juin 2026" },
-  ],
-  "En cours": [
-    { label: "Commande confirmée", date: "20 Juin 2026" },
-    { label: "Préparation en cours", date: "20 Juin 2026" },
-    { label: "Expédié", date: "21 Juin 2026" },
-  ],
-  "Traitement": [
-    { label: "Commande confirmée", date: "25 Juin 2026" },
-    { label: "Préparation en cours", date: "25 Juin 2026" },
-  ],
+const statusLabels: Record<string, string> = {
+  "pending": "En attente",
+  "processing": "En cours",
+  "shipped": "Expédié",
+  "delivered": "Livré",
+  "cancelled": "Annulé",
 }
 
 export default function OrderDetailPage() {
   const params = useParams()
   const id = params.id as string
-  const order = orders.find(o => o.id === id)
+  const { getAuthHeaders } = useAuth()
+  const [order, setOrder] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/orders", { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(data => {
+        const found = data.orders?.find((o: any) => o.id === id)
+        setOrder(found || null)
+      })
+      .catch(() => setOrder(null))
+      .finally(() => setLoading(false))
+  }, [id, getAuthHeaders])
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen bg-[var(--bg-primary)] flex items-center justify-center py-20">
+        <p className="text-[var(--text-secondary)]">Chargement...</p>
+      </div>
+    )
+  }
 
   if (!order) {
     return (
@@ -52,7 +61,8 @@ export default function OrderDetailPage() {
     )
   }
 
-  const timeline = steps[order.status] || []
+  const statusLabel = statusLabels[order.status] || order.status
+  const firstItem = order.items?.[0]
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-primary)]">
@@ -69,29 +79,33 @@ export default function OrderDetailPage() {
           <div className="p-6 rounded-2xl border-2 border-[var(--border)]">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-xl bg-[var(--bg-secondary)] overflow-hidden">
-                  <img src={order.image} alt={order.product} className="w-full h-full object-cover" />
+                <div className="w-20 h-20 rounded-xl bg-[var(--bg-secondary)] overflow-hidden flex items-center justify-center">
+                  {firstItem ? (
+                    <img src={firstItem.image || "/images/visuel.png"} alt={firstItem.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Package className="w-8 h-8 text-[var(--text-secondary)]" />
+                  )}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[var(--text-primary)]">{order.product}</h3>
-                  <p className="text-sm text-[var(--text-secondary)]">{order.date}</p>
+                  <h3 className="font-semibold text-[var(--text-primary)]">{firstItem?.name || "Produit"}</h3>
+                  <p className="text-sm text-[var(--text-secondary)]">{new Date(order.date).toLocaleDateString("fr-FR")}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-xl font-bold text-[var(--text-primary)]">{order.total}</p>
-                <Badge variant={statusColors[order.status]}>{order.status}</Badge>
+                <p className="text-xl font-bold text-[var(--text-primary)]">{Number(order.total).toLocaleString("fr-FR")} F</p>
+                <Badge variant={statusColors[order.status] || "credit"}>{statusLabel}</Badge>
               </div>
             </div>
           </div>
 
-          {order.status === "Livré" && (
+          {order.status === "delivered" && (
             <div className="p-6 rounded-2xl border-2 border-[var(--border)]">
               <h3 className="font-semibold text-[var(--text-primary)] mb-2 flex items-center gap-2">
                 <Truck className="w-5 h-5 text-[var(--text-link)]" /> Suivi de livraison
               </h3>
               <p className="text-sm text-[var(--text-secondary)] mb-4">Colis livré avec succès</p>
               <div className="flex items-center gap-2 text-sm text-green-600 font-semibold">
-                <CheckCircle className="w-4 h-4" /> Livré le 17 Juin 2026
+                <CheckCircle className="w-4 h-4" /> Livré le {new Date(order.date).toLocaleDateString("fr-FR")}
               </div>
             </div>
           )}
@@ -101,13 +115,25 @@ export default function OrderDetailPage() {
               <Clock className="w-5 h-5 text-[var(--text-link)]" /> Suivi de la commande
             </h3>
             <div className="relative pl-6 border-l-2 border-[var(--border-hover)]/30 space-y-6">
-              {timeline.map((step, i) => (
-                <div key={i} className="relative">
-                  <div className={`absolute -left-[25px] w-4 h-4 rounded-full border-2 ${i === timeline.length - 1 ? "bg-[var(--text-link)] border-[var(--border-hover)]" : "bg-[var(--bg-primary)] border-[var(--border-hover)]"}`} />
-                  <p className="font-semibold text-[var(--text-primary)] text-sm">{step.label}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">{step.date}</p>
+              <div className="relative">
+                <div className="absolute -left-[25px] w-4 h-4 rounded-full border-2 bg-[var(--text-link)] border-[var(--border-hover)]" />
+                <p className="font-semibold text-[var(--text-primary)] text-sm">Commande confirmée</p>
+                <p className="text-xs text-[var(--text-secondary)]">{new Date(order.date).toLocaleDateString("fr-FR")}</p>
+              </div>
+              {order.status === "shipped" || order.status === "delivered" ? (
+                <div className="relative">
+                  <div className={`absolute -left-[25px] w-4 h-4 rounded-full border-2 ${order.status === "delivered" ? "bg-[var(--text-link)] border-[var(--border-hover)]" : "bg-[var(--bg-primary)] border-[var(--border-hover)]"}`} />
+                  <p className="font-semibold text-[var(--text-primary)] text-sm">Expédié</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{new Date(order.date).toLocaleDateString("fr-FR")}</p>
                 </div>
-              ))}
+              ) : null}
+              {order.status === "delivered" ? (
+                <div className="relative">
+                  <div className="absolute -left-[25px] w-4 h-4 rounded-full border-2 bg-[var(--text-link)] border-[var(--border-hover)]" />
+                  <p className="font-semibold text-[var(--text-primary)] text-sm">Livré</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{new Date(order.date).toLocaleDateString("fr-FR")}</p>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -116,14 +142,14 @@ export default function OrderDetailPage() {
               <h3 className="font-semibold text-[var(--text-primary)] mb-2 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-[var(--text-link)]" /> Adresse de livraison
               </h3>
-              <p className="text-sm text-[var(--text-secondary)]">{order.address}</p>
+              <p className="text-sm text-[var(--text-secondary)]">{order.shippingAddress || "Non renseignée"}</p>
             </div>
             <div className="p-6 rounded-2xl border-2 border-[var(--border)]">
               <h3 className="font-semibold text-[var(--text-primary)] mb-2 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-[var(--text-link)]" /> Paiement
               </h3>
-              <p className="text-sm text-[var(--text-secondary)]">{order.payment}</p>
-              <p className="text-sm text-[var(--text-secondary)]">{order.delivery}</p>
+              <p className="text-sm text-[var(--text-secondary)]">{order.deliveryMethod || "Standard"}</p>
+              <p className="text-sm text-[var(--text-secondary)]">{Number(order.total).toLocaleString("fr-FR")} F</p>
             </div>
           </div>
         </div>

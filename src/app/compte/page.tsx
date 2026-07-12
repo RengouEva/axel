@@ -43,24 +43,51 @@ const roleBadge: Record<string, { label: string; color: string }> = {
 }
 
 export default function AccountPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, getAuthHeaders } = useAuth()
   const initial = user?.name?.charAt(0) || "?"
   const role = user?.role || "client"
   const badge = roleBadge[role] || roleBadge.client
   const links = role === "seller" ? sellerLinks : role === "admin" ? adminLinks : clientLinks
-  const [stats, setStats] = useState<{ orders: number; favorites: number; credit: string } | null>(null)
+  const [stats, setStats] = useState<{ orders: number; favorites: number } | null>(null)
+  const [sellerStats, setSellerStats] = useState<any>(null)
+  const [adminStats, setAdminStats] = useState<any>(null)
 
   useEffect(() => {
-    if (role !== "client") return
-    const favs = JSON.parse(localStorage.getItem("axel-favorites") || "[]")
-    const creditApps = JSON.parse(localStorage.getItem("creditApplications") || "[]")
-    const activeCredit = creditApps.find((a: { status: string }) => a.status === "pre-approved" || a.status === "approved")
-    setStats({
-      orders: 3,
-      favorites: favs.length || 0,
-      credit: activeCredit ? `${activeCredit.monthlyPayment.toLocaleString("fr-FR")} F/mois` : "Aucun",
-    })
-  }, [role])
+    if (role === "client") {
+      const favs = JSON.parse(localStorage.getItem("axel-favorites") || "[]")
+      fetch("/api/orders", { headers: getAuthHeaders() })
+        .then(r => r.json())
+        .then(data => {
+          setStats({ orders: data.total || 0, favorites: favs.length || 0 })
+        })
+        .catch(() => {
+          setStats({ orders: 0, favorites: favs.length || 0 })
+        })
+    }
+    if (role === "seller") {
+      Promise.all([
+        fetch("/api/orders", { headers: getAuthHeaders() }).then(r => r.json()),
+        fetch("/api/products", { headers: getAuthHeaders() }).then(r => r.json()),
+      ])
+        .then(([ordersData, productsData]) => {
+          const totalRevenue = (ordersData.orders || []).reduce((sum: number, o: any) => sum + Number(o.total || 0), 0)
+          setSellerStats({
+            revenue: totalRevenue,
+            orders: ordersData.total || 0,
+            products: productsData.total || 0,
+          })
+        })
+        .catch(() => {})
+    }
+    if (role === "admin") {
+      fetch("/api/admin/stats", { headers: getAuthHeaders() })
+        .then(r => r.json())
+        .then(data => {
+          setAdminStats(data.stats)
+        })
+        .catch(() => {})
+    }
+  }, [role, getAuthHeaders])
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-primary)]">
@@ -101,7 +128,7 @@ export default function AccountPage() {
             {[
               { icon: ShoppingBag, label: "Commandes", value: stats?.orders?.toString() || "0", color: "#1769F2" },
               { icon: Heart, label: "Favoris", value: stats?.favorites?.toString() || "0", color: "#ef4444" },
-              { icon: CreditCard, label: "Crédit", value: stats?.credit || "Aucun", color: "#0B4FC8" },
+              { icon: CreditCard, label: "Crédit", value: "Aucun", color: "#0B4FC8" },
             ].map((stat) => {
               const Icon = stat.icon
               return (
@@ -122,10 +149,10 @@ export default function AccountPage() {
         {role === "seller" && (
           <div className="grid sm:grid-cols-4 gap-6 mb-12">
             {[
-              { icon: DollarSign, label: "Revenus du mois", value: "2 450 000 F", color: "#1769F2" },
-              { icon: ShoppingBag, label: "Commandes", value: "47", color: "#0B4FC8" },
-              { icon: Star, label: "Note moyenne", value: "4.8", color: "#059669" },
-              { icon: Package, label: "Produits", value: "12", color: "#061A4A" },
+              { icon: DollarSign, label: "Revenus", value: sellerStats ? `${sellerStats.revenue.toLocaleString("fr-FR")} F` : "0 F", color: "#1769F2" },
+              { icon: ShoppingBag, label: "Commandes", value: sellerStats?.orders?.toString() || "0", color: "#0B4FC8" },
+              { icon: Star, label: "Note moyenne", value: "-", color: "#059669" },
+              { icon: Package, label: "Produits", value: sellerStats?.products?.toString() || "0", color: "#061A4A" },
             ].map((stat) => {
               const Icon = stat.icon
               return (
@@ -146,10 +173,10 @@ export default function AccountPage() {
         {role === "admin" && (
           <div className="grid sm:grid-cols-4 gap-6 mb-12">
             {[
-              { icon: Users, label: "Utilisateurs", value: "3", color: "#1769F2" },
-              { icon: Package, label: "Produits", value: "8", color: "#0B4FC8" },
-              { icon: Truck, label: "Livraisons", value: "3", color: "#059669" },
-              { icon: DollarSign, label: "Revenus totaux", value: "8 397 000 F", color: "#D97706" },
+              { icon: Users, label: "Utilisateurs", value: adminStats?.totalUsers?.toString() || "0", color: "#1769F2" },
+              { icon: Package, label: "Produits", value: adminStats?.totalProducts?.toString() || "0", color: "#0B4FC8" },
+              { icon: Truck, label: "Commandes", value: adminStats?.totalOrders?.toString() || "0", color: "#059669" },
+              { icon: DollarSign, label: "Revenus totaux", value: adminStats ? `${(adminStats.totalRevenue / 1000).toFixed(1)}K F` : "0 F", color: "#D97706" },
             ].map((stat) => {
               const Icon = stat.icon
               return (

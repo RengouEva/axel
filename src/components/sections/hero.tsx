@@ -75,9 +75,9 @@ export default function Hero() {
               className="grid grid-cols-3 gap-3 sm:gap-8 mt-8 sm:mt-12 pt-4 sm:pt-8 border-t border-white/10"
             >
               {[
-                { value: "50K+", label: "Produits" },
-                { value: "2M+", label: "Clients" },
-                { value: "4.9", label: "Note moyenne" },
+                { value: "-", label: "Produits" },
+                { value: "-", label: "Clients" },
+                { value: "-", label: "Note moyenne" },
               ].map((stat, index) => (
                 <div key={stat.label} className="text-center sm:text-left">
                   <motion.p
