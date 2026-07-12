@@ -7,7 +7,6 @@ import Input from "@/components/ui/input"
 import Badge from "@/components/ui/badge"
 import { AnimatedDiv } from "@/lib/animations"
 import { type Product } from "@/data/products"
-import { getCategories } from "@/data/categories"
 import type { Category } from "@/data/categories"
 import Link from "next/link"
 
@@ -32,7 +31,7 @@ export default function SellerProductsPage() {
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
-    getCategories().then(setCategories)
+    fetch("/api/categories").then(r => r.json()).then(data => setCategories(data.categories || []))
     fetch("/api/products")
       .then(r => r.json())
       .then(data => setList(data.products || []))

@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Store, MapPin, Phone, Mail, Pencil, X, Save, AlertTriangle, CheckCircle, Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { getCountries, getCities, getDistricts, type Country, type City, type District } from "@/data/delivery"
-import { getCategories } from "@/data/categories"
+import type { Country, City, District } from "@/data/delivery"
 import type { Category } from "@/data/categories"
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
@@ -65,14 +64,11 @@ export default function SellerBoutiquePage() {
   const [form, setForm] = useState(emptyForm)
 
   useEffect(() => {
-    getCategories().then(setCategories)
-  }, [])
-
-  useEffect(() => {
-    Promise.all([getCountries(), getCities(), getDistricts()]).then(([co, ci, di]) => {
-      setCountries(co)
-      setCities(ci)
-      setDistricts(di)
+    fetch("/api/categories").then(r => r.json()).then(data => setCategories(data.categories || []))
+    fetch("/api/locations").then(r => r.json()).then(data => {
+      setCountries(data.countries || [])
+      setCities(data.cities || [])
+      setDistricts(data.districts || [])
     })
   }, [])
 

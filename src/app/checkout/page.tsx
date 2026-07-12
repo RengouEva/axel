@@ -8,8 +8,7 @@ import { useCart } from "@/lib/cart-context"
 import { useAuth } from "@/lib/auth-context"
 import { useNotifications } from "@/lib/notification-context"
 import { AnimatedDiv } from "@/lib/animations"
-import { getCountries, getCities, getDistricts, type Country, type City, type District } from "@/data/delivery"
-import { getTaxRate } from "@/data/taxes"
+import type { Country, City, District } from "@/data/delivery"
 import Link from "next/link"
 
 const steps = ["Adresse", "Livraison", "Paiement", "Confirmation"]
@@ -63,15 +62,18 @@ export default function CheckoutPage() {
   })
 
   useEffect(() => {
-    Promise.all([getCountries(), getCities(), getDistricts()]).then(([co, ci, di]) => {
-      setCountries(co)
-      setCities(ci)
-      setDistricts(di)
+    fetch("/api/locations").then(r => r.json()).then(data => {
+      setCountries(data.countries || [])
+      setCities(data.cities || [])
+      setDistricts(data.districts || [])
     })
   }, [])
 
   useEffect(() => {
-    getTaxRate(form.pays || "CM").then(setTaxRate)
+    const code = form.pays || "CM"
+    fetch(`/api/taxes?countryId=${code}`).then(r => r.json()).then(data => {
+      setTaxRate(data.rate ?? 19.25)
+    })
   }, [form.pays])
 
   const tva = Math.round(subtotal * taxRate / 100)

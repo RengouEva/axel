@@ -1,20 +1,8 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react"
-import {
-  getDeliveryMissions,
-  getDeliveryPersons,
-  getCountries,
-  getCities,
-  getDistricts,
-  type DeliveryMission,
-  type DeliveryPerson,
-  type Country,
-  type City,
-  type District,
-  type MissionStatus,
-  type KycStatus,
-} from "@/data/delivery"
+import type { DeliveryMission, DeliveryPerson, Country, City, District, MissionStatus, KycStatus } from "@/data/delivery"
+import { useAuth } from "@/lib/auth-context"
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
@@ -53,22 +41,21 @@ export function DeliveryProvider({ children }: { children: ReactNode }) {
   const [cities, setCities] = useState<City[]>([])
   const [districts, setDistricts] = useState<District[]>([])
   const [filters, setFilters] = useState<DeliveryFilters>({ countryId: null, cityId: null, districtId: null })
+  const { getAuthHeaders } = useAuth()
 
   useEffect(() => {
+    const headers = getAuthHeaders()
     Promise.all([
-      getDeliveryMissions(),
-      getDeliveryPersons(),
-      getCountries(),
-      getCities(),
-      getDistricts(),
-    ]).then(([m, p, co, ci, di]) => {
-      setMissions(m)
-      setPersons(p)
-      setCountries(co)
-      setCities(ci)
-      setDistricts(di)
-    })
-  }, [])
+      fetch("/api/delivery", { headers }).then(r => r.json()),
+      fetch("/api/locations").then(r => r.json()),
+    ]).then(([deliveryData, locData]) => {
+      if (deliveryData.missions) setMissions(deliveryData.missions)
+      if (deliveryData.persons) setPersons(deliveryData.persons)
+      setCountries(locData.countries || deliveryData.countries || [])
+      setCities(locData.cities || deliveryData.cities || [])
+      setDistricts(locData.districts || deliveryData.districts || [])
+    }).catch(() => {})
+  }, [getAuthHeaders])
 
   const setFilter = useCallback((key: keyof DeliveryFilters, value: string | null) => {
     setFilters((prev) => {

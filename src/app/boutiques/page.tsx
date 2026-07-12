@@ -3,10 +3,9 @@
 import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { Store, MapPin, Star, Search, ChevronDown } from "lucide-react"
-import { getShops, type Shop } from "@/data/shops"
-import { getCategories } from "@/data/categories"
+import type { Shop } from "@/data/shops"
 import type { Category } from "@/data/categories"
-import { getCountries, getCities, type Country, type City } from "@/data/delivery"
+import type { Country, City } from "@/data/delivery"
 import Input from "@/components/ui/input"
 import { AnimatedDiv } from "@/lib/animations"
 
@@ -15,18 +14,20 @@ export default function BoutiquesPage() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [categories, setCategories] = useState<Category[]>([])
 
-  useEffect(() => {
-    getCategories().then(setCategories)
-  }, [])
   const [shops, setShops] = useState<Shop[]>([])
   const [countries, setCountries] = useState<Country[]>([])
   const [cities, setCities] = useState<City[]>([])
 
   useEffect(() => {
-    Promise.all([getShops(), getCountries(), getCities()]).then(([s, c, ct]) => {
-      setShops(s)
-      setCountries(c)
-      setCities(ct)
+    Promise.all([
+      fetch("/api/categories").then(r => r.json()),
+      fetch("/api/shops").then(r => r.json()),
+      fetch("/api/locations").then(r => r.json()),
+    ]).then(([catData, shopsData, locData]) => {
+      setCategories(catData.categories || [])
+      setShops(Array.isArray(shopsData) ? shopsData : [])
+      setCountries(locData.countries || [])
+      setCities(locData.cities || [])
     })
   }, [])
 

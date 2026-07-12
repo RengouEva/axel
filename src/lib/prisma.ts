@@ -1,4 +1,7 @@
+import "server-only"
 import type { PrismaClient } from "@prisma/client"
+
+type PrismaInstance = PrismaClient
 
 function getDatabaseUrl(): string {
   const envUrl = process.env.DATABASE_URL
@@ -11,23 +14,25 @@ function getDatabaseUrl(): string {
   return `mysql://${user}:${encodeURIComponent(pass)}@${host}:${port}/${name}`
 }
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
-let _prisma: PrismaClient | undefined = globalForPrisma.prisma
+const globalForPrisma = globalThis as unknown as { prisma: PrismaInstance | undefined }
+let _prisma: PrismaInstance | undefined = globalForPrisma.prisma
 
-function createPrisma(): PrismaClient {
+function createPrisma(): PrismaInstance {
   if (typeof window !== "undefined") {
     throw new Error("PrismaClient cannot be used in the browser")
   }
-  const mod = Function('return require("@prisma/client")')() as { PrismaClient: new (opts?: unknown) => PrismaClient }
+  const path = "@" + "prisma/client"
+  const mod = require(path) as { PrismaClient: new (opts?: unknown) => PrismaInstance }
   return new mod.PrismaClient({ datasources: { db: { url: getDatabaseUrl() } } } as never)
 }
 
-export const prisma = new Proxy({} as PrismaClient, {
-  get(_, prop: keyof PrismaClient) {
+export const prisma = new Proxy({} as PrismaInstance, {
+  get(_, prop: string | symbol) {
     if (!_prisma) {
       _prisma = createPrisma()
       if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = _prisma
     }
-    return _prisma[prop]
+    if (typeof prop === "string") return (_prisma as unknown as Record<string, unknown | undefined>)[prop]
+    return undefined
   }
 })

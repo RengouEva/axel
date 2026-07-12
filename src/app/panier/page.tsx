@@ -6,7 +6,7 @@ import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
 import { useCart } from "@/lib/cart-context"
 import { AnimatedDiv } from "@/lib/animations"
-import { getTaxRate } from "@/data/taxes"
+
 import Link from "next/link"
 
 export default function CartPage() {
@@ -14,7 +14,9 @@ export default function CartPage() {
   const [taxRate, setTaxRate] = useState(19.25)
 
   useEffect(() => {
-    getTaxRate("CM").then(setTaxRate)
+    fetch("/api/taxes?countryId=CM").then(r => r.json()).then(data => {
+      setTaxRate(data.rate ?? 19.25)
+    })
   }, [])
 
   const tva = Math.round(subtotal * taxRate / 100)

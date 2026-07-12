@@ -5,7 +5,7 @@ import Button from "@/components/ui/button"
 import Badge from "@/components/ui/badge"
 import { AnimatedDiv } from "@/lib/animations"
 import { useAuth } from "@/lib/auth-context"
-import { getCities, getDistricts, type City, type District } from "@/data/delivery"
+import type { City, District } from "@/data/delivery"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 
@@ -54,12 +54,11 @@ export default function OrdersPage() {
   useEffect(() => {
     Promise.all([
       fetch("/api/orders").then((r) => r.json()),
-      getCities(),
-      getDistricts(),
-    ]).then(([data, ci, di]) => {
+      fetch("/api/locations").then((r) => r.json()),
+    ]).then(([data, loc]) => {
       setOrders(data.orders || [])
-      setCities(ci)
-      setDistricts(di)
+      setCities(loc.cities || [])
+      setDistricts(loc.districts || [])
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 

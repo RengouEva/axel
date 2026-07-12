@@ -5,7 +5,6 @@ import {
   Grid3X3, Plus, Smartphone, Laptop, Tv, Snowflake, Shirt, Sparkles,
   Home, Trophy, Car, Building2, ShoppingCart, Wrench
 } from "lucide-react"
-import { getCategories } from "@/data/categories"
 import type { Category } from "@/data/categories"
 
 const iconMap: Record<string, typeof Smartphone> = {
@@ -17,7 +16,7 @@ export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
 
   useEffect(() => {
-    getCategories().then(setCategories)
+    fetch("/api/categories").then(r => r.json()).then(data => setCategories(data.categories || []))
   }, [])
 
   return (

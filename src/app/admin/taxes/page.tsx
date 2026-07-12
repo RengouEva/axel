@@ -5,8 +5,8 @@ import { DollarSign, Save, Percent, Globe, Plus, Trash2 } from "lucide-react"
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
 import { useAuth } from "@/lib/auth-context"
-import { getCountries, type Country } from "@/data/delivery"
-import { getAllTaxRates, saveTaxRates, getDefaultTaxRates, type TaxRate } from "@/data/taxes"
+import type { Country } from "@/data/delivery"
+import type { TaxRate } from "@/data/taxes"
 import Link from "next/link"
 
 export default function AdminTaxesPage() {
@@ -17,9 +17,12 @@ export default function AdminTaxesPage() {
   const [countries, setCountries] = useState<Country[]>([])
 
   useEffect(() => {
-    Promise.all([getAllTaxRates(), getCountries()]).then(([r, c]) => {
-      setRates(r)
-      setCountries(c)
+    Promise.all([
+      fetch("/api/taxes").then(r => r.json()),
+      fetch("/api/locations").then(r => r.json()),
+    ]).then(([taxData, locData]) => {
+      setRates(taxData.rates || [])
+      setCountries(locData.countries || [])
     })
   }, [])
 
@@ -44,15 +47,23 @@ export default function AdminTaxesPage() {
   }
 
   const handleSave = async () => {
-    await saveTaxRates(rates)
+    await fetch("/api/taxes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "save", rates }),
+    })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   const handleReset = async () => {
-    const defaults = await getDefaultTaxRates()
-    await saveTaxRates(defaults)
-    setRates([...defaults])
+    const res = await fetch("/api/taxes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reset" }),
+    })
+    const data = await res.json()
+    if (data.rates) setRates(data.rates)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
