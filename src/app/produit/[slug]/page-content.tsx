@@ -57,7 +57,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     { label: "Note", value: `${product.rating}/5` },
     { label: "Avis", value: `${product.reviews} avis` },
     { label: "Stock", value: product.inStock ? "Disponible" : "Épuisé" },
-    { label: "Garantie", value: "2 ans" },
   ]
 
   return (

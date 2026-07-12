@@ -228,11 +228,11 @@ export default function SellerProductsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Nom du produit</label>
-                <Input placeholder="iPhone 16 Pro Max" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+                <Input placeholder="Nom du produit" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Marque</label>
-                <Input placeholder="Apple" value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} required />
+                <Input placeholder="Marque" value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Catégorie</label>
@@ -243,7 +243,7 @@ export default function SellerProductsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Prix (F CFA)</label>
-                <Input type="number" placeholder="1599000" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} required />
+                <Input type="number" placeholder="Prix en F CFA" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Crédit (nombre de mois)</label>

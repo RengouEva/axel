@@ -96,10 +96,5 @@ export async function GET() {
   return NextResponse.json({
     message: "AXEL Credit API",
     description: "Simulation et demande de crédit",
-    example: {
-      price: 1599000,
-      duration: 12,
-      monthlyIncome: 500000,
-    },
   })
 }
