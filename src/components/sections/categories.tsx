@@ -5,7 +5,6 @@ import {
   Smartphone, Laptop, Tv, Refrigerator, Shirt, Sparkles,
   Sofa, Trophy, Car, Building2, ShoppingCart, Settings
 } from "lucide-react"
-import type { Category } from "@/data/categories"
 import { AnimatedDiv } from "@/lib/animations"
 
 const iconMap: Record<string, React.ElementType> = {
@@ -15,7 +14,7 @@ const iconMap: Record<string, React.ElementType> = {
 
 export default function Categories() {
   const [hoveredId, setHoveredId] = useState<number | null>(null)
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<{ id: number; name: string; slug: string; icon: string }[]>([])
 
   useEffect(() => {
     fetch("/api/categories").then(r => r.json()).then(d => setCategories(d.categories || []))
