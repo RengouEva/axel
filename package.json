@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/prebuild.js && npx prisma generate && next build",
+    "build": "node -e \"require('fs').copyFileSync('.env.build','.env')\" && npx prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
