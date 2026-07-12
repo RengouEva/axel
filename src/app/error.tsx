@@ -12,11 +12,7 @@ export default function RootError({ error, reset }: { error: Error & { digest?: 
         </div>
         <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Une erreur est survenue</h2>
         <p className="text-[var(--text-secondary)] mb-4">Veuillez réessayer ou revenir à l'accueil.</p>
-        <div className="mb-6 p-4 bg-red-50 rounded-lg text-left" style={{ fontFamily: "monospace", fontSize: "12px", wordBreak: "break-word", maxHeight: "200px", overflow: "auto" }}>
-          <strong style={{ color: "#991b1b" }}>{error.name}: </strong>
-          <span style={{ color: "#7f1d1d" }}>{error.message}</span>
-          {error.digest && <p style={{ color: "#888", marginTop: "4px" }}>Digest: {error.digest}</p>}
-        </div>
+        <pre style={{ background: "#fee", padding: "1rem", borderRadius: "8px", textAlign: "left", fontSize: "14px", whiteSpace: "pre-wrap", wordBreak: "break-all", marginBottom: "1rem", border: "1px solid #fcc" }}>{(error && (error.message || error.name || typeof error === "string")) ? (typeof error === "string" ? error : error.name + ": " + error.message) : "Aucun détail disponible"}</pre>
         <div className="flex gap-3 justify-center">
           <Button onClick={reset}><RefreshCw className="w-4 h-4" /> Réessayer</Button>
           <Button variant="outline" onClick={() => window.location.href = "/"}>Accueil</Button>
