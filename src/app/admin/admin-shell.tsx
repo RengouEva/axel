@@ -5,7 +5,8 @@ import toast from "react-hot-toast"
 import {
   LayoutDashboard, Users, Store, Package, Grid3X3, ShoppingCart, Wallet,
   CreditCard, DollarSign, BookOpen, BarChart3, FileText, Activity,
-  Menu, Shield, LogOut, ChevronRight, Percent, Gem, Megaphone
+  Menu, Shield, LogOut, ChevronRight, Percent, Gem, Megaphone,
+  BarChart4, AlertTriangle, BadgeCheck, RotateCcw, Bell, Lock, Key
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { usePathname } from "next/navigation"
@@ -38,6 +39,19 @@ const navItems = [
     { icon: DollarSign, label: "Tarifs", href: "/admin/publicite/tarifs" },
     { icon: DollarSign, label: "Revenus", href: "/admin/publicite/revenus" },
     { icon: Activity, label: "Signalées", href: "/admin/publicite/signalees" },
+  ]},
+  { section: "Classement", items: [
+    { icon: BarChart4, label: "Scores", href: "/admin/classement/scores" },
+    { icon: Activity, label: "Événements", href: "/admin/classement/evenements" },
+    { icon: AlertTriangle, label: "Fraudes", href: "/admin/classement/fraudes" },
+    { icon: Store, label: "Activité", href: "/admin/classement/activite" },
+  ]},
+  { section: "Services Pro", items: [
+    { icon: BadgeCheck, label: "Vérifications", href: "/admin/services-pro/verifications" },
+    { icon: RotateCcw, label: "Retours", href: "/admin/services-pro/retours" },
+    { icon: Bell, label: "Notifications", href: "/admin/services-pro/notifications" },
+    { icon: Lock, label: "Sécurité", href: "/admin/services-pro/securite" },
+    { icon: Key, label: "Clés API", href: "/admin/services-pro/api-keys" },
   ]},
   { section: "Analyse", items: [
     { icon: BarChart3, label: "Statistiques", href: "/admin/stats" },
