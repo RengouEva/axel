@@ -1,9 +1,11 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
+import toast from "react-hot-toast"
 import { Users, ShoppingCart, DollarSign, Package, CreditCard, Mail, TrendingUp, Clock, Store } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 interface AdminStats {
   totalUsers: number; totalClients: number; totalSellers: number; totalAdmins: number
@@ -16,11 +18,23 @@ export default function AdminDashboard() {
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetch("/api/admin/stats", { headers: getAuthHeaders() }).then(r => r.json()).then(d => { setStats(d.stats); setRecentOrders(d.recentOrders || []) }).catch(() => {}).finally(() => setLoading(false))
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/stats", { headers: getAuthHeaders() })
+      if (!res.ok) throw new Error("Erreur de chargement")
+      const d = await res.json()
+      setStats(d.stats)
+      setRecentOrders(d.recentOrders || [])
+    } catch {
+      toast.error("Erreur lors du chargement des statistiques")
+    } finally {
+      setLoading(false)
+    }
   }, [getAuthHeaders])
 
-  if (loading || !stats) return <div className="flex items-center justify-center h-64"><p className="text-[var(--text-secondary)]">Chargement...</p></div>
+  useEffect(() => { fetchStats() }, [fetchStats])
+
+  if (loading || !stats) return <div className="flex items-center justify-center h-64"><LoadingSpinner size="lg" /></div>
 
   const cards = [
     { icon: Users, label: "Utilisateurs", value: stats.totalUsers.toString(), sub: `${stats.totalClients} clients | ${stats.totalSellers} vendeurs`, color: "#1769F2", href: "/admin/utilisateurs" },
@@ -88,11 +102,11 @@ export default function AdminDashboard() {
             <Users className="w-4 h-4 text-[var(--text-link)]" /> Répartition des utilisateurs
           </h3>
           <div className="space-y-3">
-            {[
-              { label: "Clients", value: stats.totalClients, color: "#1769F2", pct: Math.round(stats.totalClients / stats.totalUsers * 100) },
-              { label: "Vendeurs", value: stats.totalSellers, color: "#059669", pct: Math.round(stats.totalSellers / stats.totalUsers * 100) },
-              { label: "Administrateurs", value: stats.totalAdmins, color: "#D97706", pct: Math.round(stats.totalAdmins / stats.totalUsers * 100) },
-            ].map((item) => (
+              {[
+                { label: "Clients", value: stats.totalClients, color: "#1769F2", pct: stats.totalUsers ? Math.round(stats.totalClients / stats.totalUsers * 100) : 0 },
+                { label: "Vendeurs", value: stats.totalSellers, color: "#059669", pct: stats.totalUsers ? Math.round(stats.totalSellers / stats.totalUsers * 100) : 0 },
+                { label: "Administrateurs", value: stats.totalAdmins, color: "#D97706", pct: stats.totalUsers ? Math.round(stats.totalAdmins / stats.totalUsers * 100) : 0 },
+              ].map((item) => (
               <div key={item.label}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-[var(--text-muted)]">{item.label}</span>

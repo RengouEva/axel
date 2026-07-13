@@ -99,7 +99,7 @@ export default function AdminBoutiquesPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [getAuthHeaders])
 
   useEffect(() => {
     fetchData()
