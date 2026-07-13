@@ -3,7 +3,7 @@
 import { Store, MapPin, Phone, Mail, Star, Package, Shield, ChevronDown } from "lucide-react"
 import Button from "@/components/ui/button"
 import { useCart } from "@/lib/cart-context"
-import type { Product } from "@/data/products"
+import type { Product } from "@/data/product-types"
 import type { Shop } from "@/data/shops"
 import type { Country, City, District } from "@/data/delivery"
 import Link from "next/link"

@@ -3,7 +3,7 @@
 import { Zap, Clock, Star } from "lucide-react"
 import Button from "@/components/ui/button"
 import Badge from "@/components/ui/badge"
-import type { Product } from "@/data/products"
+import type { Product } from "@/data/product-types"
 import { AnimatedDiv } from "@/lib/animations"
 import { useCart } from "@/lib/cart-context"
 import Link from "next/link"

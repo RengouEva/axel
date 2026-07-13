@@ -7,7 +7,7 @@ import { AnimatedDiv } from "@/lib/animations"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
 import { useCompare } from "@/lib/compare-context"
-import { hasCreditRates } from "@/data/products"
+import { hasCreditRates } from "@/data/product-types"
 import Link from "next/link"
 
 interface Product {

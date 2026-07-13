@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useCallback, useMemo, type ReactNode } from "react"
 import { useLocalStorage } from "@/lib/use-local-storage"
-import type { Product } from "@/data/products"
+import type { Product } from "@/data/product-types"
 
 interface CompareContextType {
   items: Product[]

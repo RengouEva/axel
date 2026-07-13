@@ -6,7 +6,7 @@ import Badge from "@/components/ui/badge"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
 import { AnimatedDiv } from "@/lib/animations"
-import { hasCreditRates } from "@/data/products"
+import { hasCreditRates } from "@/data/product-types"
 import Link from "next/link"
 
 export default function FavoritesPage() {

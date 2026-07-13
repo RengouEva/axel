@@ -2,7 +2,7 @@
 
 import { Sparkles, Star } from "lucide-react"
 import Button from "@/components/ui/button"
-import type { Product } from "@/data/products"
+import type { Product } from "@/data/product-types"
 import { AnimatedDiv } from "@/lib/animations"
 import { useCart } from "@/lib/cart-context"
 import Link from "next/link"

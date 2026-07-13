@@ -3,7 +3,7 @@
 import { Trash2, Plus, Star, ShoppingCart, X } from "lucide-react"
 import Button from "@/components/ui/button"
 import { AnimatedDiv } from "@/lib/animations"
-import { hasCreditRates } from "@/data/products"
+import { hasCreditRates } from "@/data/product-types"
 import { useCompare } from "@/lib/compare-context"
 import { useCart } from "@/lib/cart-context"
 import Link from "next/link"
