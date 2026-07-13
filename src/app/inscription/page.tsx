@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useState } from "react"
+import toast from "react-hot-toast"
 import { UserPlus, Mail, Lock, User, Eye, EyeOff, ShoppingBag, Store } from "lucide-react"
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
@@ -38,6 +39,7 @@ export default function RegisterPage() {
     if (err) {
       setError(err)
     } else {
+      toast.success("Compte créé avec succès")
       router.push("/compte")
     }
   }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import toast from "react-hot-toast"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -209,7 +210,7 @@ export default function Navbar() {
                           </Link>
                         )}
                         <button
-                          onClick={() => { logout(); setShowUserMenu(false) }}
+                          onClick={() => { logout(); toast.success("Déconnecté"); setShowUserMenu(false) }}
                           className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                         >
                           <LogOut className="w-4 h-4" /> Déconnexion
@@ -309,7 +310,7 @@ export default function Navbar() {
                   </Link>
                 )}
                 <button
-                  onClick={() => { logout(); setMobileMenuOpen(false) }}
+                  onClick={() => { logout(); toast.success("Déconnecté"); setMobileMenuOpen(false) }}
                   className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                 >
                   <LogOut className="w-4 h-4" /> Déconnexion

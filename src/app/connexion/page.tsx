@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useState } from "react"
+import toast from "react-hot-toast"
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
@@ -27,6 +28,7 @@ export default function LoginPage() {
     if (err) {
       setError(err)
     } else {
+      toast.success("Connexion réussie")
       const savedUser = JSON.parse(localStorage.getItem("axel-user") || "null")
       const role = savedUser?.role
       if (role === "admin") router.push("/admin")
