@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { getRankedProductsByShop } from "@/data/products"
+import { getRankedProductsByShop, getProductsByShop } from "@/data/products"
 import { getShopBySlug } from "@/data/shops"
 import { getCountries, getCities, getDistricts } from "@/data/delivery"
 import BoutiquePageContent from "./page-content"
@@ -8,8 +8,13 @@ export default async function BoutiquePage({ params }: { params: Promise<{ slug:
   const { slug } = await params
   const shop = await getShopBySlug(slug)
   if (!shop) notFound()
-  const [products, countries, cities, districts] = await Promise.all([
-    getRankedProductsByShop(slug),
+  let products = [] as Awaited<ReturnType<typeof getProductsByShop>>
+  try {
+    products = await getRankedProductsByShop(slug)
+  } catch {
+    products = await getProductsByShop(slug)
+  }
+  const [countries, cities, districts] = await Promise.all([
     getCountries(),
     getCities(),
     getDistricts(),

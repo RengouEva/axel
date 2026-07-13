@@ -1,11 +1,15 @@
-﻿import { getRankedProducts } from "@/data/products"
+﻿import { getRankedProducts, getProducts } from "@/data/products"
 import { getCategories } from "@/data/categories"
 import ProductsPageContent from "./page-content"
 
 export default async function ProductsPage() {
-  const [result, categories] = await Promise.all([
-    getRankedProducts({ limit: 50 }),
-    getCategories(),
-  ])
-  return <ProductsPageContent products={result.products} categories={categories} />
+  const [categories] = await Promise.all([getCategories()])
+  let products = [] as Awaited<ReturnType<typeof getProducts>>
+  try {
+    const result = await getRankedProducts({ limit: 50 })
+    products = result.products
+  } catch {
+    products = await getProducts()
+  }
+  return <ProductsPageContent products={products} categories={categories} />
 }
