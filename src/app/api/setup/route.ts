@@ -563,9 +563,11 @@ export async function GET(request: Request) {
   const results: string[] = []
 
   try {
+    await execute("SET FOREIGN_KEY_CHECKS = 0")
     for (const sql of CREATE_TABLES) {
       await execute(sql)
     }
+    await execute("SET FOREIGN_KEY_CHECKS = 1")
     results.push(`${CREATE_TABLES.length} tables créées/vérifiées`)
 
     for (const cat of CATEGORIES_SEED) {
