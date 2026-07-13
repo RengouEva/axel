@@ -45,7 +45,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   if (!user || user.role !== "admin") {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center dark">
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
         <div className="text-center max-w-sm mx-auto p-8">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1769F2] to-[#0B4FC8] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-[#1769F2]/20">
             <Shield className="w-8 h-8 text-white" />
@@ -61,7 +61,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex dark">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex">
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}

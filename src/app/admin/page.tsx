@@ -51,19 +51,37 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
+    setError(null)
     fetch("/api/admin/stats", { headers: getAuthHeaders() })
       .then(r => r.json())
-      .then(d => { if (!cancelled) { setStats(d.stats); setOrders(d.recentOrders || []) } })
-      .catch(() => {})
+      .then(d => {
+        if (!cancelled) {
+          if (d.error) { setError(d.error); return }
+          setStats(d.stats); setOrders(d.recentOrders || [])
+        }
+      })
+      .catch(() => { if (!cancelled) setError("Erreur réseau") })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [getAuthHeaders])
 
-  if (loading || !stats) {
+  if (loading) {
     return <div className="flex items-center justify-center min-h-[60vh]"><LoadingSpinner size="lg" text="Chargement du tableau de bord..." /></div>
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <p className="text-[var(--text-danger)]">{error || "Impossible de charger les données"}</p>
+        <button onClick={() => window.location.reload()} className="px-4 py-2 rounded-xl bg-[var(--text-link)] text-white text-sm font-semibold hover:bg-[#0B4FC8] transition-colors">
+          Réessayer
+        </button>
+      </div>
+    )
   }
 
   const cards = [
