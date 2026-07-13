@@ -507,7 +507,7 @@ CREATE TABLE IF NOT EXISTS AdCampaignNotification (
   type VARCHAR(50) NOT NULL,
   title VARCHAR(255) NOT NULL,
   message TEXT,
-  read TINYINT(1) DEFAULT 0,
+  `read` TINYINT(1) DEFAULT 0,
   createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_campaignId (campaignId),
   INDEX idx_userId (userId),
