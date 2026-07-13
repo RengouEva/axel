@@ -87,6 +87,7 @@ export default function Navbar() {
               onClick={() => setSearchOpen(!searchOpen)}
               className="md:hidden p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
               aria-label="Rechercher"
+              title="Rechercher"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -98,6 +99,7 @@ export default function Navbar() {
               onClick={toggleTheme}
               className="hidden sm:flex p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
               aria-label={isDark ? "Mode clair" : "Mode sombre"}
+              title={isDark ? "Mode clair" : "Mode sombre"}
             >
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
@@ -107,6 +109,7 @@ export default function Navbar() {
               href="/compte/favoris"
               className="relative p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors hidden sm:flex"
               aria-label="Favoris"
+              title="Favoris"
             >
               <Heart className="w-5 h-5" />
               {favorites.length > 0 && (
@@ -121,6 +124,7 @@ export default function Navbar() {
               href="/comparateur"
               className="relative p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors hidden sm:flex"
               aria-label="Comparateur"
+              title="Comparateur"
             >
               <GitCompare className="w-5 h-5" />
               {compareItems.length > 0 && (
@@ -135,6 +139,7 @@ export default function Navbar() {
               href="/panier"
               className="relative p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
               aria-label="Panier"
+              title="Panier"
             >
               <ShoppingCart className="w-5 h-5" />
               {totalItems > 0 && (
@@ -149,6 +154,7 @@ export default function Navbar() {
               href="/notifications"
               className="relative p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors hidden sm:flex"
               aria-label="Notifications"
+              title="Notifications"
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
@@ -234,6 +240,7 @@ export default function Navbar() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
               aria-label="Menu"
+              title="Menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
