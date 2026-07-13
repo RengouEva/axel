@@ -1,7 +1,11 @@
 ﻿"use client"
 
 import { useEffect, useState } from "react"
-import { Users, ShoppingCart, DollarSign, Package, CreditCard, Mail, TrendingUp, Clock, Store } from "lucide-react"
+import {
+  Users, Store, Package, ShoppingCart, DollarSign, CreditCard,
+  TrendingUp, ArrowUpRight, ArrowDownRight, Clock, Shield,
+  Plus, Eye, ExternalLink
+} from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
@@ -11,110 +15,216 @@ interface AdminStats {
   totalOrders: number; totalProducts: number; totalShops: number; totalRevenue: number; unreadMessages: number
 }
 
+interface Order {
+  id: string
+  total: number
+  status: string
+  date: string
+  user?: { id: number; name: string; email: string } | null
+}
+
+const statusStyles: Record<string, string> = {
+  pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  processing: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  shipped: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  delivered: "bg-green-500/10 text-green-400 border-green-500/20",
+  cancelled: "bg-red-500/10 text-red-400 border-red-500/20",
+}
+
+const statusLabels: Record<string, string> = {
+  pending: "En attente", processing: "En cours", shipped: "Expédiée", delivered: "Livrée", cancelled: "Annulée",
+}
+
+function StatCard({ icon: Icon, label, value, sub, trend, href }: {
+  icon: any; label: string; value: string; sub: string; trend?: "up" | "down"; href: string
+}) {
+  return (
+    <Link href={href} className="group relative p-5 rounded-2xl bg-[#0F1421] border border-white/5 hover:border-[#1769F2]/30 transition-all duration-300 overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-[#1769F2]/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-[#1769F2]/10 transition-colors" />
+      <div className="relative">
+        <div className="flex items-start justify-between mb-4">
+          <div className="w-10 h-10 rounded-xl bg-[#1769F2]/10 flex items-center justify-center">
+            <Icon className="w-5 h-5 text-[#60A5FA]" />
+          </div>
+          {trend && (
+            <span className={`flex items-center gap-1 text-xs font-semibold ${trend === "up" ? "text-green-400" : "text-red-400"}`}>
+              {trend === "up" ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              {trend === "up" ? "+12%" : "-3%"}
+            </span>
+          )}
+        </div>
+        <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
+        <p className="text-xs text-[#64748B] mt-0.5">{label}</p>
+        <p className="text-[10px] text-[#475569] mt-0.5">{sub}</p>
+      </div>
+    </Link>
+  )
+}
+
 export default function AdminDashboard() {
-  const { getAuthHeaders } = useAuth()
+  const { user, getAuthHeaders } = useAuth()
   const [stats, setStats] = useState<AdminStats | null>(null)
-  const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     fetch("/api/admin/stats", { headers: getAuthHeaders() })
       .then(r => r.json())
-      .then(d => { if (!cancelled) { setStats(d.stats); setRecentOrders(d.recentOrders || []) } })
+      .then(d => { if (!cancelled) { setStats(d.stats); setOrders(d.recentOrders || []) } })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [getAuthHeaders])
 
-  if (loading || !stats) return <div className="flex items-center justify-center h-64"><LoadingSpinner size="lg" /></div>
+  if (loading || !stats) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner size="lg" text="Chargement du tableau de bord..." />
+      </div>
+    )
+  }
 
-  const cards = [
-    { icon: Users, label: "Utilisateurs", value: stats.totalUsers.toString(), sub: `${stats.totalClients} clients | ${stats.totalSellers} vendeurs`, color: "#1769F2", href: "/admin/utilisateurs" },
-    { icon: Store, label: "Boutiques", value: stats.totalShops.toString(), sub: `${stats.totalSellers} vendeurs`, color: "#059669", href: "/admin/boutiques" },
-    { icon: Package, label: "Produits", value: stats.totalProducts.toString(), sub: "références", color: "#0B4FC8", href: "/admin/produits" },
-    { icon: ShoppingCart, label: "Commandes", value: stats.totalOrders.toString(), sub: `${recentOrders.filter(o => o.status === "pending").length} en attente`, color: "#D97706", href: "/admin/commandes" },
-    { icon: DollarSign, label: "Revenus", value: `${(stats.totalRevenue / 1000).toFixed(1)}K F`, sub: "total généré", color: "#061A4A", href: "/admin/finance" },
-    { icon: CreditCard, label: "Crédits", value: "-", sub: "en développement", color: "#1769F2", href: "/admin/credits" },
-    { icon: Mail, label: "Messages", value: stats.unreadMessages.toString(), sub: "non lus", color: "#059669", href: "/contact" },
-    { icon: TrendingUp, label: "Croissance", value: "+12.5%", sub: "ce mois", color: "#D97706", href: "/admin/stats" },
+  const pendingOrders = orders.filter(o => o.status === "pending").length
+
+  const cards: { icon: any; label: string; value: string; sub: string; href: string; trend?: "up" | "down" }[] = [
+    { icon: DollarSign, label: "Revenus", value: `${(stats.totalRevenue / 1000).toFixed(1)}K F`, sub: "total généré", trend: "up", href: "/admin/finance" },
+    { icon: ShoppingCart, label: "Commandes", value: stats.totalOrders.toString(), sub: `${pendingOrders} en attente`, trend: pendingOrders > 0 ? "up" : undefined, href: "/admin/commandes" },
+    { icon: Store, label: "Boutiques", value: stats.totalShops.toString(), sub: `${stats.totalSellers} vendeurs`, trend: "up", href: "/admin/boutiques" },
+    { icon: Package, label: "Produits", value: stats.totalProducts.toString(), sub: "références actives", href: "/admin/produits" },
+  ]
+
+  const quickActions = [
+    { icon: Plus, label: "Nouveau produit", href: "/admin/produits", desc: "Ajouter une référence" },
+    { icon: Users, label: "Utilisateurs", href: "/admin/utilisateurs", desc: `${stats.totalUsers} inscrits` },
+    { icon: Eye, label: "Aperçu site", href: "/", desc: "Voir le marketplace", external: true },
+    { icon: Shield, label: "Sécurité", href: "/admin/logs", desc: "Consulter les logs" },
   ]
 
   return (
     <div className="p-4 lg:p-8 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-[var(--text-secondary)] text-sm">Vue d'ensemble de la plateforme AXEL</p>
+      {/* En-tête */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            Bon retour, {user?.name?.split(" ")[0] || "Admin"}
+          </h1>
+          <p className="text-sm text-[#64748B] mt-1">
+            Voici le résumé de votre plateforme AXEL
+          </p>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/5 text-xs text-[#64748B]">
+          <Clock className="w-3.5 h-3.5" />
+          {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+        </div>
       </div>
 
+      {/* Cartes KPI */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {cards.map((c) => {
-          const Icon = c.icon
-          return (
-            <Link key={c.label} href={c.href} className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--border-hover)]/30 transition-all group">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${c.color}15` }}>
-                  <Icon className="w-5 h-5" style={{ color: c.color }} />
-                </div>
-                <span className="text-[10px] text-[var(--text-link)] opacity-0 group-hover:opacity-100 transition-opacity">Voir {">"}</span>
-              </div>
-              <p className="text-2xl font-bold text-white">{c.value}</p>
-              <p className="text-xs text-[var(--text-secondary)]">{c.label}</p>
-              {c.sub && <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{c.sub}</p>}
-            </Link>
-          )
-        })}
+        {cards.map(c => <StatCard key={c.label} {...c} />)}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-5">
-          <h3 className="font-bold text-white text-sm mb-4 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-[var(--text-link)]" /> Dernières commandes
-          </h3>
-          <div className="space-y-2">
-            {recentOrders.length === 0 ? (
-              <p className="text-xs text-[var(--text-secondary)] text-center py-4">Aucune commande</p>
-            ) : recentOrders.slice(0, 5).map((o) => (
-              <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-primary)]">
-                <div>
-                  <p className="text-sm font-semibold text-white">{o.user?.name || "-"}</p>
-                  <p className="text-[10px] text-[var(--text-secondary)]">{o.id} | {new Date(o.date).toLocaleDateString("fr-FR")}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-white">{o.total.toLocaleString("fr-FR")} F</p>
-                  <span className={`text-[10px] font-semibold ${o.status === "delivered" ? "text-green-500" : o.status === "pending" ? "text-amber-500" : "text-blue-500"}`}>{o.status}</span>
-                </div>
-              </div>
-            ))}
+      {/* Grille principale */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Commandes récentes */}
+        <div className="lg:col-span-2 rounded-2xl bg-[#0F1421] border border-white/5 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-[#60A5FA]" />
+              Dernières commandes
+            </h3>
+            <Link href="/admin/commandes" className="text-xs text-[#60A5FA] hover:text-white transition-colors font-medium">
+              Voir tout
+            </Link>
           </div>
-          <Link href="/admin/commandes" className="block text-center text-xs font-semibold text-[var(--text-link)] mt-4 hover:underline">{"Voir toutes les commandes >"}</Link>
+          {orders.length === 0 ? (
+            <p className="text-sm text-[#475569] text-center py-8">Aucune commande récente</p>
+          ) : (
+            <div className="space-y-2">
+              {orders.slice(0, 6).map((o) => (
+                <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#1769F2]/10 flex items-center justify-center shrink-0">
+                      <ShoppingCart className="w-4 h-4 text-[#60A5FA]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{o.user?.name || "Client"}</p>
+                      <p className="text-[10px] text-[#64748B]">
+                        {o.date ? new Date(o.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "-"}
+                        {" · "}
+                        <span className="font-mono">{o.id?.toString().slice(-8) || "-"}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center gap-3">
+                    <p className="text-sm font-bold text-white">{o.total?.toLocaleString("fr-FR") || "0"} F</p>
+                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${statusStyles[o.status] || "bg-white/5 text-[#64748B] border-white/10"}`}>
+                      {statusLabels[o.status] || o.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-5">
-          <h3 className="font-bold text-white text-sm mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-[var(--text-link)]" /> Répartition des utilisateurs
-          </h3>
-          <div className="space-y-3">
+        {/* Actions rapides + stats utilisateurs */}
+        <div className="space-y-6">
+          {/* Répartition utilisateurs */}
+          <div className="rounded-2xl bg-[#0F1421] border border-white/5 p-6">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-5">
+              <Users className="w-4 h-4 text-[#60A5FA]" />
+              Utilisateurs
+            </h3>
+            <div className="space-y-4">
               {[
                 { label: "Clients", value: stats.totalClients, color: "#1769F2", pct: stats.totalUsers ? Math.round(stats.totalClients / stats.totalUsers * 100) : 0 },
                 { label: "Vendeurs", value: stats.totalSellers, color: "#059669", pct: stats.totalUsers ? Math.round(stats.totalSellers / stats.totalUsers * 100) : 0 },
                 { label: "Administrateurs", value: stats.totalAdmins, color: "#D97706", pct: stats.totalUsers ? Math.round(stats.totalAdmins / stats.totalUsers * 100) : 0 },
               ].map((item) => (
-              <div key={item.label}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-[var(--text-muted)]">{item.label}</span>
-                  <span className="text-white font-semibold">{item.value}</span>
+                <div key={item.label}>
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="text-[#64748B]">{item.label}</span>
+                    <span className="text-white font-semibold">{item.value}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${item.pct}%`, backgroundColor: item.color }} />
+                  </div>
                 </div>
-                <div className="h-2 rounded-full bg-[var(--bg-primary)] overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${item.pct}%`, backgroundColor: item.color }} />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-xs">
+              <span className="text-[#64748B]">Total</span>
+              <span className="text-white font-bold">{stats.totalUsers}</span>
+            </div>
+          </div>
+
+          {/* Actions rapides */}
+          <div className="rounded-2xl bg-[#0F1421] border border-white/5 p-6">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-4">
+              <TrendingUp className="w-4 h-4 text-[#60A5FA]" />
+              Actions rapides
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              {quickActions.map((a) => {
+                const Icon = a.icon
+                return (
+                  <Link
+                    key={a.label}
+                    href={a.href}
+                    target={a.external ? "_blank" : undefined}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/[0.03] hover:bg-[#1769F2]/10 border border-transparent hover:border-[#1769F2]/20 transition-all group text-center"
+                  >
+                    <Icon className="w-5 h-5 text-[#64748B] group-hover:text-[#60A5FA] transition-colors" />
+                    <span className="text-xs font-semibold text-white">{a.label}</span>
+                    <span className="text-[10px] text-[#475569]">{a.desc}</span>
+                  </Link>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
     </div>
   )
 }
-
-
