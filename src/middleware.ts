@@ -44,6 +44,7 @@ const API_PUBLIC_ROUTES = [
   "/api/taxes",
   "/api/upload",
   "/api/plans",
+  "/api/delivery",
 ]
 
 const API_READ_ROUTES: string[] = []

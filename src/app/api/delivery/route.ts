@@ -8,9 +8,6 @@ import { checkApiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
 
 export async function GET(request: Request) {
   try {
-    const auth = await requireAuth(request)
-    if (!auth.success) return auth.response
-
     const ip = request.headers.get("x-forwarded-for") || "unknown"
     const rateLimit = checkApiRateLimit(`delivery:${ip}`)
     const headers = getRateLimitHeaders(rateLimit)

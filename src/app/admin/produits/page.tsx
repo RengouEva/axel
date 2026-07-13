@@ -107,8 +107,12 @@ export default function AdminProductsPage() {
           {filtered.map((p) => (
               <div key={p.id} className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[var(--border)] last:border-0 items-center hover:bg-[var(--bg-elevated)] transition-colors">
                 <div className="col-span-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] overflow-hidden flex-shrink-0">
-                  <img src={p.image} alt={p.name} className="w-full h-full object-contain" />
+                  <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                  {p.image ? (
+                    <img src={p.image} alt={p.name} className="w-full h-full object-contain" />
+                  ) : (
+                    <Package className="w-5 h-5 text-[var(--text-muted)]" />
+                  )}
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[var(--text-primary)]">{p.name}</p>

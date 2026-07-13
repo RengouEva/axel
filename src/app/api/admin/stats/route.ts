@@ -25,7 +25,6 @@ export async function GET(request: Request) {
       revenueRow,
       recentOrders,
       ordersByStatus,
-      unreadMessagesRow,
       users,
     ] = await Promise.all([
       queryOne<{ count: number }>("SELECT COUNT(*) as count FROM User"),
@@ -44,11 +43,16 @@ export async function GET(request: Request) {
       queryAll<{ status: string; count: number }>(
         "SELECT status, COUNT(*) as count FROM `Order` GROUP BY status"
       ),
-      queryOne<{ count: number }>("SELECT COUNT(*) as count FROM ContactMessage WHERE isRead = 0"),
       queryAll<any>(
         "SELECT id, name, email, role, createdAt FROM User ORDER BY createdAt DESC"
       ),
     ])
+
+    let unreadMessages = 0
+    try {
+      const msgRow = await queryOne<{ count: number }>("SELECT COUNT(*) as count FROM ContactMessage WHERE isRead = 0")
+      unreadMessages = msgRow?.count ?? 0
+    } catch {}
 
     const totalUsers = totalUsersRow?.count ?? 0
     const totalClients = totalClientsRow?.count ?? 0
@@ -58,7 +62,6 @@ export async function GET(request: Request) {
     const totalShops = totalShopsRow?.count ?? 0
     const totalOrders = totalOrdersRow?.count ?? 0
     const totalRevenue = revenueRow?.total ?? 0
-    const unreadMessages = unreadMessagesRow?.count ?? 0
 
     if (recentOrders.length > 0) {
       const orderIds = recentOrders.map((o: any) => o.id)
