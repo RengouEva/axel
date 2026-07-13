@@ -57,8 +57,7 @@ export async function getProductWithShop(productId: number): Promise<any> {
     `SELECT p.*, s.id as shop_id, s.name as shop_name, s.slug as shop_slug,
             s.logo as shop_logo, s.category as shop_category,
             s.rating as shop_rating, s.reviews as shop_reviews,
-            s.totalSales as shop_totalSales, s.createdAt as shop_createdAt,
-            s.sellerVerified as shop_sellerVerified
+            s.totalSales as shop_totalSales, s.createdAt as shop_createdAt
      FROM Product p
      LEFT JOIN Shop s ON s.id = p.shopId
      WHERE p.id = ?`,
@@ -201,7 +200,7 @@ export async function calculateSellerReputationScore(shopId: string): Promise<nu
   if (cached !== undefined) return cached
 
   const shop = await queryOne<any>(
-    `SELECT s.rating, s.reviews, s.totalSales, s.sellerVerified, s.createdAt,
+    `SELECT s.rating, s.reviews, s.totalSales, s.createdAt,
             COUNT(DISTINCT p.id) as productCount,
             COUNT(DISTINCT CASE WHEN p.updatedAt > DATE_SUB(NOW(), INTERVAL 30 DAY) THEN p.id END) as activeProducts,
             COUNT(DISTINCT sb.id) as badgeCount
@@ -708,7 +707,7 @@ export async function getOrganicProducts(
     `SELECT p.*, s.id as shop_id, s.name as shop_name, s.slug as shop_slug,
             s.logo as shop_logo, s.category as shop_category,
             s.rating as shop_rating, s.reviews as shop_reviews,
-            s.totalSales as shop_totalSales, s.sellerVerified as shop_sellerVerified
+            s.totalSales as shop_totalSales
      FROM Product p
      LEFT JOIN Shop s ON s.id = p.shopId
      ${whereSQL}
