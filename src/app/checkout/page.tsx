@@ -90,7 +90,7 @@ export default function CheckoutPage() {
   const selectedDistrict = districts.find(d => d.id === form.quartier)
 
   const canProceed = () => {
-    if (currentStep === 0) return form.nom && form.email && form.telephone && form.adresse && form.ville && form.quartier
+    if (currentStep === 0) return form.nom && form.email && form.telephone && form.adresse
     if (currentStep === 1) return true
     if (currentStep === 2) return form.carte.length >= 16 && form.nomCarte && form.exp.length >= 4 && form.cvv.length >= 3
     return true
@@ -134,7 +134,7 @@ export default function CheckoutPage() {
           countryId: form.pays,
           cityId: form.ville,
           districtId: form.quartier,
-          deliveryAddress: `${form.adresse}, ${selectedDistrict?.name}, ${selectedCity?.name}`,
+          deliveryAddress: [form.adresse, selectedDistrict?.name || form.quartier, selectedCity?.name || form.ville].filter(Boolean).join(", "),
           customerName: form.nom,
           customerPhone: form.telephone,
         }),
@@ -206,8 +206,26 @@ export default function CheckoutPage() {
                   <Input id="checkout-tel" placeholder="Téléphone" value={form.telephone} onChange={e => updateForm("telephone", e.target.value)} />
                 </div>
                 <SelectField id="checkout-pays" label="Pays" value={form.pays} onChange={(v) => updateForm("pays", v)} options={countries} placeholder="Pays" />
-                <SelectField id="checkout-ville" label="Ville" value={form.ville} onChange={(v) => updateForm("ville", v)} options={filteredCities} placeholder="Ville" />
-                <SelectField id="checkout-quartier" label="Quartier" value={form.quartier} onChange={(v) => updateForm("quartier", v)} options={filteredDistricts} placeholder="Quartier" />
+                {form.pays && filteredCities.length > 0 ? (
+                  <SelectField id="checkout-ville" label="Ville" value={form.ville} onChange={(v) => updateForm("ville", v)} options={filteredCities} placeholder="Ville" />
+                ) : (
+                  <div>
+                    <label htmlFor="checkout-ville" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Ville</label>
+                    <input id="checkout-ville" type="text" placeholder="Saisir la ville" value={form.ville} onChange={e => updateForm("ville", e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-hover)] transition-colors"
+                    />
+                  </div>
+                )}
+                {form.ville && filteredDistricts.length > 0 ? (
+                  <SelectField id="checkout-quartier" label="Quartier" value={form.quartier} onChange={(v) => updateForm("quartier", v)} options={filteredDistricts} placeholder="Quartier" />
+                ) : (
+                  <div>
+                    <label htmlFor="checkout-quartier" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Quartier</label>
+                    <input id="checkout-quartier" type="text" placeholder="Saisir le quartier" value={form.quartier} onChange={e => updateForm("quartier", e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--border-hover)] transition-colors"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label htmlFor="checkout-adresse" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Adresse complète</label>
@@ -224,7 +242,7 @@ export default function CheckoutPage() {
               <h2 className="font-bold text-[var(--text-primary)] flex items-center gap-2"><Truck className="w-5 h-5 text-[var(--text-link)]" aria-hidden="true" /> Mode de livraison</h2>
               <div className="p-3 rounded-xl bg-[var(--bg-secondary)] text-sm text-[var(--text-secondary)] flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[var(--text-link)]" aria-hidden="true" />
-                Livraison vers <strong className="text-[var(--text-primary)]">{selectedDistrict?.name}</strong>, <strong className="text-[var(--text-primary)]">{selectedCity?.name}</strong> - {selectedCountry?.flag} {selectedCountry?.name}
+                Livraison vers {selectedDistrict?.name || form.quartier || form.ville}{selectedDistrict?.name || form.quartier ? "" : " - "}{selectedCity?.name || ""} {selectedCountry?.flag} {selectedCountry?.name}
               </div>
               <fieldset>
                 <legend className="sr-only">Mode de livraison</legend>

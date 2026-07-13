@@ -103,8 +103,8 @@ export const creditApplicationSchema = z.object({
 export const deliveryCreateSchema = z.object({
   orderId: z.string().min(1, "L'ID de commande est requis"),
   countryId: z.string().min(1, "Le pays est requis"),
-  cityId: z.string().min(1, "La ville est requise"),
-  districtId: z.string().min(1, "Le quartier est requis"),
+  cityId: z.string().optional(),
+  districtId: z.string().optional(),
   deliveryAddress: z.string().max(500).optional(),
   customerName: z.string().max(200).optional(),
   customerPhone: z.string().max(20).optional(),
@@ -133,8 +133,8 @@ export const shopCreateSchema = z.object({
   phone: z.string().max(20).optional(),
   email: z.string().email("Email invalide").max(255).optional(),
   countryId: z.string().min(1, "Le pays est requis"),
-  cityId: z.string().min(1, "La ville est requise"),
-  districtId: z.string().min(1, "Le quartier est requis"),
+  cityId: z.string().optional(),
+  districtId: z.string().optional(),
   address: z.string().max(500).optional(),
   category: z.string().min(1, "La catégorie est requise"),
 })

@@ -284,35 +284,49 @@ export default function SellerBoutiquePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Ville *</label>
-                    <select
-                      value={form.cityId}
-                      onChange={e => setForm(f => ({ ...f, cityId: e.target.value, districtId: "" }))}
-                      required
-                      disabled={!form.countryId}
-                      className="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--border)] text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] focus:border-[var(--border-hover)] focus:outline-none disabled:opacity-50"
-                    >
-                      <option value="">Sélectionner</option>
-                      {filteredCities.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Ville</label>
+                    {form.countryId && filteredCities.length > 0 ? (
+                      <select
+                        value={form.cityId}
+                        onChange={e => setForm(f => ({ ...f, cityId: e.target.value, districtId: "" }))}
+                        className="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--border)] text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] focus:border-[var(--border-hover)] focus:outline-none"
+                      >
+                        <option value="">Sélectionner</option>
+                        {filteredCities.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text" placeholder="Saisir la ville" value={form.cityId === null ? "" : form.cityId}
+                        onChange={e => setForm(f => ({ ...f, cityId: e.target.value, districtId: "" }))}
+                        disabled={!form.countryId}
+                        className="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--border)] text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] focus:border-[var(--border-hover)] focus:outline-none disabled:opacity-50"
+                      />
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Quartier *</label>
-                    <select
-                      value={form.districtId}
-                      onChange={e => setForm(f => ({ ...f, districtId: e.target.value }))}
-                      required
-                      disabled={!form.cityId}
-                      className="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--border)] text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] focus:border-[var(--border-hover)] focus:outline-none disabled:opacity-50"
-                    >
-                      <option value="">Sélectionner</option>
-                      {filteredDistricts.map(d => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </select>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Quartier</label>
+                    {form.cityId && filteredDistricts.length > 0 ? (
+                      <select
+                        value={form.districtId}
+                        onChange={e => setForm(f => ({ ...f, districtId: e.target.value }))}
+                        className="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--border)] text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] focus:border-[var(--border-hover)] focus:outline-none"
+                      >
+                        <option value="">Sélectionner</option>
+                        {filteredDistricts.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text" placeholder="Saisir le quartier" value={form.districtId === null ? "" : form.districtId}
+                        onChange={e => setForm(f => ({ ...f, districtId: e.target.value }))}
+                        disabled={!form.cityId}
+                        className="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--border)] text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] focus:border-[var(--border-hover)] focus:outline-none disabled:opacity-50"
+                      />
+                    )}
                   </div>
                 </div>
 
