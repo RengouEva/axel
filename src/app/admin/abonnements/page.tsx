@@ -101,7 +101,7 @@ export default function AdminAbonnementsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [getAuthHeaders])
 
   useEffect(() => {
     if (user?.role === "admin") fetchData()

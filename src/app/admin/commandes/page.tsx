@@ -1,10 +1,8 @@
 ﻿"use client"
 
 import { useEffect, useState } from "react"
-import { ShoppingCart, ArrowLeft, Shield, Package } from "lucide-react"
-import { AnimatedDiv } from "@/lib/animations"
+import { ShoppingCart, ArrowLeft, Shield, Package, Search } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import Button from "@/components/ui/button"
 import Link from "next/link"
 
 interface OrderItem {
@@ -27,6 +25,7 @@ export default function AdminOrdersPage() {
   const { user, getAuthHeaders } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
 
   useEffect(() => {
     fetch("/api/orders", { headers: getAuthHeaders() })
@@ -38,72 +37,82 @@ export default function AdminOrdersPage() {
 
   if (!user || user.role !== "admin") {
     return (
-      <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <Shield className="w-16 h-16 text-[var(--text-muted)] mx-auto mb-4" />
+          <Shield className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
           <p className="text-[var(--text-secondary)]">Accès restreint</p>
-          <Link href="/compte"><Button>Retour</Button></Link>
         </div>
       </div>
     )
   }
 
   const statusLabels: Record<string, string> = {
-    pending: "En attente", processing: "En cours", shipped: "Expédié", delivered: "Livré",
+    pending: "En attente", processing: "En cours", shipped: "Expédiée", delivered: "Livrée", cancelled: "Annulée",
   }
   const statusColors: Record<string, string> = {
-    pending: "text-amber-600 bg-amber-50", processing: "text-blue-600 bg-blue-50",
-    shipped: "text-purple-600 bg-purple-50", delivered: "text-green-600 bg-green-50",
+    pending: "text-amber-400 bg-amber-500/10", processing: "text-blue-400 bg-blue-500/10",
+    shipped: "text-purple-400 bg-purple-500/10", delivered: "text-green-400 bg-green-500/10",
+    cancelled: "text-red-400 bg-red-500/10",
   }
+
+  const filtered = orders.filter(o =>
+    !search || o.id.toLowerCase().includes(search.toLowerCase()) || o.user?.name?.toLowerCase().includes(search.toLowerCase())
+  )
 
   const totalRevenue = orders.reduce((s, o) => s + o.total, 0)
 
   return (
-    <div className="w-full min-h-screen bg-[var(--bg-secondary)]">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Link href="/admin" className="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-secondary)] transition-colors"><ArrowLeft className="w-5 h-5 text-[var(--text-secondary)]" /></Link>
-          <div>
-            <h1 className="text-4xl font-bold text-[var(--text-primary)]">Commandes</h1>
-            <p className="text-[var(--text-secondary)]">{orders.length} commandes | {totalRevenue.toLocaleString("fr-FR")} F de revenus</p>
-          </div>
+    <div className="p-4 lg:p-8 space-y-6">
+      <div className="flex items-center gap-4">
+        <Link href="/admin" className="p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--border-hover)]/30 transition-colors">
+          <ArrowLeft className="w-5 h-5 text-[var(--text-secondary)]" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Commandes</h1>
+          <p className="text-sm text-[var(--text-secondary)]">{orders.length} commandes · {totalRevenue.toLocaleString("fr-FR")} F de revenus</p>
         </div>
-
-        {loading ? (
-          <p className="text-center text-[var(--text-secondary)] py-12">Chargement...</p>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-12">
-            <ShoppingCart className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
-            <p className="text-[var(--text-secondary)]">Aucune commande</p>
-          </div>
-        ) : (
-          <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] overflow-hidden">
-            <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[var(--bg-secondary)] border-b border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)]">
-              <div className="col-span-3">Client</div>
-              <div className="col-span-3">Commande</div>
-              <div className="col-span-2">Total</div>
-              <div className="col-span-2">Statut</div>
-              <div className="col-span-2">Date</div>
-            </div>
-            {orders.map((o, i) => (
-              <AnimatedDiv key={o.id} fade slideUp delay={i * 0.02} className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[var(--border)] last:border-0 items-center hover:bg-[var(--bg-secondary)]/50 transition-colors">
-                <div className="col-span-3 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-[var(--text-link)]" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">{o.user?.name || "-"}</span>
-                </div>
-                <div className="col-span-3 text-sm text-[var(--text-secondary)]">{o.id}</div>
-                <div className="col-span-2 text-sm font-bold text-[var(--text-primary)]">{o.total.toLocaleString("fr-FR")} F</div>
-                <div className="col-span-2">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColors[o.status] || "text-gray-600 bg-gray-50"}`}>
-                    {statusLabels[o.status] || o.status}
-                  </span>
-                </div>
-                <div className="col-span-2 text-xs text-[var(--text-secondary)]">{new Date(o.date).toLocaleDateString("fr-FR")}</div>
-              </AnimatedDiv>
-            ))}
-          </div>
-        )}
       </div>
+
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher une commande..."
+          className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-hover)]/30 transition-colors" />
+      </div>
+
+      {loading ? (
+        <p className="text-center text-[var(--text-secondary)] py-12">Chargement...</p>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-12 bg-[var(--bg-card)] rounded-2xl border border-[var(--border)]">
+          <ShoppingCart className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
+          <p className="text-[var(--text-secondary)]">Aucune commande trouvée</p>
+        </div>
+      ) : (
+        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] overflow-hidden">
+          <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[var(--bg-elevated)] border-b border-[var(--border)] text-xs font-semibold text-[var(--text-muted)]">
+            <div className="col-span-3">Client</div>
+            <div className="col-span-3">Commande</div>
+            <div className="col-span-2">Total</div>
+            <div className="col-span-2">Statut</div>
+            <div className="col-span-2">Date</div>
+          </div>
+          {filtered.map((o) => (
+            <div key={o.id} className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[var(--border)] last:border-0 items-center hover:bg-[var(--bg-elevated)] transition-colors">
+              <div className="col-span-3 flex items-center gap-2">
+                <Package className="w-4 h-4 text-[var(--text-info)]" />
+                <span className="text-sm font-semibold text-[var(--text-primary)]">{o.user?.name || "-"}</span>
+              </div>
+              <div className="col-span-3 text-sm text-[var(--text-secondary)] font-mono">#{o.id?.toString().slice(-8)}</div>
+              <div className="col-span-2 text-sm font-bold text-[var(--text-primary)]">{o.total.toLocaleString("fr-FR")} F</div>
+              <div className="col-span-2">
+                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${statusColors[o.status] || "text-[var(--text-secondary)] bg-[var(--bg-elevated)]"}`}>
+                  {statusLabels[o.status] || o.status}
+                </span>
+              </div>
+              <div className="col-span-2 text-xs text-[var(--text-secondary)]">{new Date(o.date).toLocaleDateString("fr-FR")}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
