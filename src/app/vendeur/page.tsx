@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
-import { Package, ShoppingCart, DollarSign, Users, Star, ArrowUp, ArrowDown, Store } from "lucide-react"
+import { ShoppingCart, DollarSign, Users, Star, ArrowUp, ArrowDown, Store } from "lucide-react"
 import { AnimatedDiv } from "@/lib/animations"
 import Button from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
@@ -66,7 +66,6 @@ export default function SellerPage() {
           </div>
           <div className="flex gap-3">
             <Link href="/vendeur/boutique"><Button variant="outline"><Store className="w-4 h-4" /> Ma boutique</Button></Link>
-            <Link href="/vendeur/produits"><Button variant="outline"><Package className="w-4 h-4" /> Gérer les produits</Button></Link>
             <Link href="/produits"><Button>Voir la boutique</Button></Link>
           </div>
         </div>
@@ -116,7 +115,7 @@ export default function SellerPage() {
           <AnimatedDiv fade slideUp delay={0.05} className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-[var(--text-primary)]">Produits en vedette</h2>
-              <Link href="/vendeur/produits" className="text-sm text-[var(--text-link)] font-semibold">Gérer</Link>
+              <Link href="/vendeur/boutique" className="text-sm text-[var(--text-link)] font-semibold">Gérer</Link>
             </div>
             <div className="space-y-3">
               {products.length === 0 ? (

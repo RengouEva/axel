@@ -87,6 +87,7 @@ export default function SellerBoutiquePage() {
   const [uploading, setUploading] = useState(false)
   const [rateInputs, setRateInputs] = useState<Record<string, string>>(Object.fromEntries(creditDurations.map(d => [String(d), ""])))
   const [productSearch, setProductSearch] = useState("")
+  const [productError, setProductError] = useState("")
 
   useEffect(() => {
     fetch("/api/categories").then(r => r.json()).then(data => setCategories(data.categories || []))
@@ -140,6 +141,7 @@ export default function SellerBoutiquePage() {
     setEditingProductId(null)
     setShowProductForm(false)
     setRateInputs(Object.fromEntries(creditDurations.map(d => [String(d), ""])))
+    setProductError("")
   }
 
   const openEditProduct = (p: Product) => {
@@ -160,6 +162,7 @@ export default function SellerBoutiquePage() {
     setRateInputs(parseRatesForForm(raw))
     setEditingProductId(p.id)
     setShowProductForm(true)
+    setProductError("")
   }
 
   const uploadFile = async (file: File): Promise<string> => {
@@ -199,6 +202,7 @@ export default function SellerBoutiquePage() {
 
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setProductError("")
     const price = Number(productForm.price)
     if (!productForm.name || !productForm.brand || !price) return
 
@@ -214,7 +218,7 @@ export default function SellerBoutiquePage() {
     const productData: Record<string, unknown> = {
       name: productForm.name,
       brand: productForm.brand,
-      category: productForm.category,
+      category: shop?.category || productForm.category,
       price,
       description: productForm.description,
       image: mainImage,
@@ -226,6 +230,7 @@ export default function SellerBoutiquePage() {
     }
 
     try {
+      let ok = false
       if (editingProductId) {
         const res = await fetch(`/api/products/${editingProductId}`, {
           method: "PUT",
@@ -233,8 +238,12 @@ export default function SellerBoutiquePage() {
           body: JSON.stringify(productData),
         })
         if (res.ok) {
-          const updated = await res.json()
-          setProducts(prev => prev.map(p => p.id === editingProductId ? { ...p, ...updated, monthlyPrice: Math.round(price / creditMonths), images: finalImages } : p))
+          ok = true
+          if (shop) await fetchProducts(shop.id)
+        } else {
+          const err = await res.json()
+          setProductError(err.error || "Erreur lors de la modification")
+          return
         }
       } else {
         const res = await fetch("/api/products", {
@@ -243,17 +252,18 @@ export default function SellerBoutiquePage() {
           body: JSON.stringify(productData),
         })
         if (res.ok) {
-          const created = await res.json()
-          setProducts(prev => [...prev, { ...created, reviews: 0, rating: 0, slug: productForm.name.toLowerCase().replace(/\s+/g, "-"), images: finalImages }])
+          ok = true
+          if (shop) await fetchProducts(shop.id)
         } else {
           const err = await res.json()
-          alert(err.error || "Erreur lors de la création")
+          setProductError(err.error || "Erreur lors de la création")
+          return
         }
       }
+      if (ok) resetProductForm()
     } catch {
-      alert("Erreur réseau")
+      setProductError("Erreur réseau. Veuillez réessayer.")
     }
-    resetProductForm()
   }
 
   const handleDeleteProduct = async () => {
@@ -608,6 +618,12 @@ export default function SellerBoutiquePage() {
                   <h3 className="text-lg font-bold text-[var(--text-primary)]">{editingProductId ? "Modifier le produit" : "Nouveau produit"}</h3>
                   <button onClick={resetProductForm} className="p-2 rounded-xl hover:bg-[var(--bg-secondary)]"><X className="w-5 h-5 text-[var(--text-secondary)]" /></button>
                 </div>
+                {productError && (
+                  <div className="mb-4 p-3 rounded-xl bg-red-50 border-2 border-red-200 flex items-center gap-2 text-sm text-red-700 font-medium">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    {productError}
+                  </div>
+                )}
                 <form onSubmit={handleProductSubmit} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="sm:col-span-2 lg:col-span-3">
                     <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">Images du produit</label>
@@ -654,10 +670,9 @@ export default function SellerBoutiquePage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Catégorie</label>
-                    <select value={productForm.category} onChange={e => setProductForm(f => ({ ...f, category: e.target.value }))}
-                      className="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--border)] text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] focus:border-[var(--border-hover)] focus:outline-none">
-                      {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    </select>
+                    <div className="w-full px-4 py-2.5 rounded-xl border-2 border-[var(--border)] text-sm text-[var(--text-primary)] bg-[var(--bg-secondary)]">
+                      {shop?.category || productForm.category}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Prix (F CFA)</label>
