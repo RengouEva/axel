@@ -1,8 +1,9 @@
 ﻿"use client"
 
 import { useEffect, useState, useCallback } from "react"
+import toast from "react-hot-toast"
 import {
-  Store, Users, Shield, ArrowLeft, Crown, Trash2, Check, X, Loader2,
+  Store, Users, Shield, ArrowLeft, Crown, Trash2, Loader2, X,
   Sparkles, BadgeCheck, AlertTriangle, Star, TrendingUp, Headphones, Zap, Package
 } from "lucide-react"
 import Link from "next/link"
@@ -44,7 +45,6 @@ export default function AdminBoutiquesPage() {
   const [shops, setShops] = useState<ShopItem[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   const [premiumModal, setPremiumModal] = useState(false)
   const [premiumShop, setPremiumShop] = useState<ShopItem | null>(null)
@@ -59,11 +59,6 @@ export default function AdminBoutiquesPage() {
 
   const [deleteConfirm, setDeleteConfirm] = useState<ShopItem | null>(null)
   const [deleting, setDeleting] = useState(false)
-
-  const showToast = useCallback((type: "success" | "error", message: string) => {
-    setToast({ type, message })
-    setTimeout(() => setToast(null), 4000)
-  }, [])
 
   const fetchData = useCallback(async () => {
     const headers = getAuthHeaders()
@@ -100,11 +95,11 @@ export default function AdminBoutiquesPage() {
         setPlans(data.plans || data || [])
       }
     } catch {
-      showToast("error", "Erreur lors du chargement")
+      toast.error( "Erreur lors du chargement")
     } finally {
       setLoading(false)
     }
-  }, [showToast])
+  }, [])
 
   useEffect(() => {
     fetchData()
@@ -125,11 +120,11 @@ export default function AdminBoutiquesPage() {
         }),
       })
       if (!res.ok) throw new Error("Erreur lors de l'assignation")
-      showToast("success", `Premium activé pour ${premiumShop.name}`)
+      toast.success( `Premium activé pour ${premiumShop.name}`)
       setPremiumModal(false)
       setPremiumShop(null)
     } catch {
-      showToast("error", "Erreur lors de l'assignation du premium")
+      toast.error( "Erreur lors de l'assignation du premium")
     } finally {
       setSaving(false)
     }
@@ -151,11 +146,11 @@ export default function AdminBoutiquesPage() {
         headers,
       })
       if (!res.ok) throw new Error("Erreur lors de la suppression")
-      showToast("success", `${deleteConfirm.name} supprimé avec succès`)
+      toast.success( `${deleteConfirm.name} supprimé avec succès`)
       setDeleteConfirm(null)
       fetchData()
     } catch {
-      showToast("error", "Erreur lors de la suppression")
+      toast.error( "Erreur lors de la suppression")
     } finally {
       setDeleting(false)
     }
@@ -163,17 +158,6 @@ export default function AdminBoutiquesPage() {
 
   return (
     <div className="p-4 lg:p-8 space-y-8">
-      {toast && (
-        <div className={`fixed top-4 right-4 z-[100] px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border transition-all ${
-          toast.type === "success"
-            ? "bg-green-900/90 text-green-100 border-green-700/50"
-            : "bg-red-900/90 text-red-100 border-red-700/50"
-        }`}>
-          {toast.type === "success" ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-          {toast.message}
-        </div>
-      )}
-
       <div className="flex items-center gap-4">
         <Link href="/admin" className="p-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--border-hover)]/30 transition-colors">
           <ArrowLeft className="w-5 h-5 text-[var(--text-muted)]" />

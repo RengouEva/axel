@@ -1,7 +1,8 @@
 ﻿"use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Users, Shield, Store, User, ArrowLeft, Trash2, Check, X, Loader2 } from "lucide-react"
+import toast from "react-hot-toast"
+import { Users, Shield, Store, User, ArrowLeft, Trash2, Loader2 } from "lucide-react"
 import { AnimatedDiv } from "@/lib/animations"
 import { useAuth } from "@/lib/auth-context"
 import Button from "@/components/ui/button"
@@ -21,12 +22,6 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState<AdminUser | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null)
-
-  const showToast = useCallback((type: "success" | "error", message: string) => {
-    setToast({ type, message })
-    setTimeout(() => setToast(null), 4000)
-  }, [])
 
   const headers = getAuthHeaders()
 
@@ -37,11 +32,11 @@ export default function AdminUsersPage() {
       const data = await res.json()
       setUsers(data.users || [])
     } catch {
-      showToast("error", "Erreur lors du chargement")
+      toast.error( "Erreur lors du chargement")
     } finally {
       setLoading(false)
     }
-  }, [headers, showToast])
+  }, [headers])
 
   useEffect(() => {
     if (user?.role === "admin") fetchUsers()
@@ -59,11 +54,11 @@ export default function AdminUsersPage() {
         const data = await res.json()
         throw new Error(data.error || "Erreur lors de la suppression")
       }
-      showToast("success", `${deleteConfirm.name} supprimé avec succès`)
+      toast.success( `${deleteConfirm.name} supprimé avec succès`)
       setDeleteConfirm(null)
       fetchUsers()
     } catch (err) {
-      showToast("error", err instanceof Error ? err.message : "Erreur lors de la suppression")
+      toast.error( err instanceof Error ? err.message : "Erreur lors de la suppression")
     } finally {
       setDeleting(false)
     }
@@ -77,10 +72,10 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ role: newRole }),
       })
       if (!res.ok) throw new Error("Erreur lors du changement de rôle")
-      showToast("success", `Rôle de ${targetUser.name} changé en ${newRole}`)
+      toast.success( `Rôle de ${targetUser.name} changé en ${newRole}`)
       fetchUsers()
     } catch {
-      showToast("error", "Erreur lors du changement de rôle")
+      toast.error( "Erreur lors du changement de rôle")
     }
   }
 
@@ -101,17 +96,6 @@ export default function AdminUsersPage() {
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)]">
-      {toast && (
-        <div className={`fixed top-4 right-4 z-[100] px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border transition-all ${
-          toast.type === "success"
-            ? "bg-green-900/90 text-green-100 border-green-700/50"
-            : "bg-red-900/90 text-red-100 border-red-700/50"
-        }`}>
-          {toast.type === "success" ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-          {toast.message}
-        </div>
-      )}
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Link href="/admin" className="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-secondary)] transition-colors"><ArrowLeft className="w-5 h-5 text-[var(--text-secondary)]" /></Link>

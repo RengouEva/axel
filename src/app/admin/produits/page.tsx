@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useEffect, useState, useCallback } from "react"
+import toast from "react-hot-toast"
 import {
   Package, ArrowLeft, Shield, Star, Trash2, TrendingUp,
   Check, X, Loader2, AlertTriangle, Search
@@ -26,7 +27,6 @@ export default function AdminProductsPage() {
   const { user, getAuthHeaders } = useAuth()
   const [products, setProducts] = useState<AdminProduct[]>([])
   const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   const [deleteConfirm, setDeleteConfirm] = useState<AdminProduct | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -56,11 +56,6 @@ export default function AdminProductsPage() {
        (p.shop?.name || "").toLowerCase().includes(search.toLowerCase()))
   )
 
-  const showToast = useCallback((type: "success" | "error", message: string) => {
-    setToast({ type, message })
-    setTimeout(() => setToast(null), 4000)
-  }, [])
-
   const fetchProducts = useCallback(async () => {
     const headers = getAuthHeaders()
     setLoading(true)
@@ -70,11 +65,11 @@ export default function AdminProductsPage() {
       const data = await res.json()
       setProducts(data.products || [])
     } catch {
-      showToast("error", "Erreur lors du chargement")
+      toast.error( "Erreur lors du chargement")
     } finally {
       setLoading(false)
     }
-  }, [showToast, shopFilter])
+  }, [shopFilter])
 
   useEffect(() => {
     if (user?.role === "admin") fetchProducts()
@@ -90,11 +85,11 @@ export default function AdminProductsPage() {
         headers,
       })
       if (!res.ok) throw new Error("Erreur lors de la suppression")
-      showToast("success", `${deleteConfirm.name} supprimé`)
+      toast.success( `${deleteConfirm.name} supprimé`)
       setDeleteConfirm(null)
       fetchProducts()
     } catch {
-      showToast("error", "Erreur lors de la suppression")
+      toast.error( "Erreur lors de la suppression")
     } finally {
       setDeleting(false)
     }
@@ -117,11 +112,11 @@ export default function AdminProductsPage() {
         const data = await res.json()
         throw new Error(data.error || "Erreur lors du boost")
       }
-      showToast("success", `${boostProduct.name} boosté pour ${boostDays} jours`)
+      toast.success( `${boostProduct.name} boosté pour ${boostDays} jours`)
       setBoostModal(false)
       setBoostProduct(null)
     } catch (err) {
-      showToast("error", err instanceof Error ? err.message : "Erreur lors du boost")
+      toast.error( err instanceof Error ? err.message : "Erreur lors du boost")
     } finally {
       setBoosting(false)
     }
@@ -141,17 +136,6 @@ export default function AdminProductsPage() {
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)]">
-      {toast && (
-        <div className={`fixed top-4 right-4 z-[100] px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border transition-all ${
-          toast.type === "success"
-            ? "bg-green-900/90 text-green-100 border-green-700/50"
-            : "bg-red-900/90 text-red-100 border-red-700/50"
-        }`}>
-          {toast.type === "success" ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-          {toast.message}
-        </div>
-      )}
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Link href={shopFilter ? "/admin/boutiques" : "/admin"} className="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-secondary)] transition-colors"><ArrowLeft className="w-5 h-5 text-[var(--text-secondary)]" /></Link>

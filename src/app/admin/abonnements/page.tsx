@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import toast from "react-hot-toast"
 import {
   Crown, Shield, Star, Check, X, Plus, Edit3, Trash2, ArrowLeft,
   AlertTriangle, Loader2, BadgeCheck, Gem, Sparkles, Store, Clock
@@ -79,13 +80,6 @@ export default function AdminAbonnementsPage() {
     hasFeaturedBadge: false,
   })
 
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null)
-
-  const showToast = useCallback((type: "success" | "error", message: string) => {
-    setToast({ type, message })
-    setTimeout(() => setToast(null), 4000)
-  }, [])
-
   const fetchData = useCallback(async () => {
     const headers = getAuthHeaders()
     setLoading(true)
@@ -103,11 +97,11 @@ export default function AdminAbonnementsPage() {
         setShops(data.shops || data || [])
       }
     } catch {
-      showToast("error", "Erreur lors du chargement des données")
+      toast.error( "Erreur lors du chargement des données")
     } finally {
       setLoading(false)
     }
-  }, [showToast])
+  }, [])
 
   useEffect(() => {
     if (user?.role === "admin") fetchData()
@@ -124,12 +118,12 @@ export default function AdminAbonnementsPage() {
         body: JSON.stringify(editingPlan),
       })
       if (!res.ok) throw new Error("Erreur lors de la sauvegarde")
-      showToast("success", `Plan ${isEdit ? "modifié" : "créé"} avec succès`)
+      toast.success( `Plan ${isEdit ? "modifié" : "créé"} avec succès`)
       setPlanModal(false)
       setEditingPlan({ ...emptyPlan })
       fetchData()
     } catch {
-      showToast("error", "Erreur lors de la sauvegarde du plan")
+      toast.error( "Erreur lors de la sauvegarde du plan")
     } finally {
       setSaving(false)
     }
@@ -144,11 +138,11 @@ export default function AdminAbonnementsPage() {
         headers,
       })
       if (!res.ok) throw new Error("Erreur lors de la suppression")
-      showToast("success", "Plan supprimé avec succès")
+      toast.success( "Plan supprimé avec succès")
       setDeleteConfirm(null)
       fetchData()
     } catch {
-      showToast("error", "Erreur lors de la suppression du plan")
+      toast.error( "Erreur lors de la suppression du plan")
     } finally {
       setSaving(false)
     }
@@ -169,7 +163,7 @@ export default function AdminAbonnementsPage() {
         }),
       })
       if (!res.ok) throw new Error("Erreur lors de l'assignation")
-      showToast("success", `Premium assigné à ${premiumShop.name}`)
+      toast.success( `Premium assigné à ${premiumShop.name}`)
       setPremiumModal(false)
       setPremiumShop(null)
       setPremiumPlanId("")
@@ -177,7 +171,7 @@ export default function AdminAbonnementsPage() {
       setPremiumBadges({ hasPremiumBadge: false, hasVerifiedBadge: false, hasFeaturedBadge: false })
       fetchData()
     } catch {
-      showToast("error", "Erreur lors de l'assignation du premium")
+      toast.error( "Erreur lors de l'assignation du premium")
     } finally {
       setSaving(false)
     }
@@ -221,17 +215,6 @@ export default function AdminAbonnementsPage() {
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)]">
-      {toast && (
-        <div className={`fixed top-4 right-4 z-[100] px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-semibold border transition-all ${
-          toast.type === "success"
-            ? "bg-green-900/90 text-green-100 border-green-700/50"
-            : "bg-red-900/90 text-red-100 border-red-700/50"
-        }`}>
-          {toast.type === "success" ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-          {toast.message}
-        </div>
-      )}
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
         <div className="flex items-center gap-4">
           <Link href="/admin" className="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-secondary)] transition-colors">
