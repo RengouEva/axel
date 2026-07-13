@@ -539,9 +539,7 @@ const CREATE_TABLES = [
     verifiedAt DATETIME, expiresAt DATETIME, rejectionReason TEXT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_status (status), INDEX idx_shopId (shopId),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
-    FOREIGN KEY (verifiedBy) REFERENCES User(id) ON DELETE SET NULL
+    INDEX idx_status (status), INDEX idx_shopId (shopId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS ProductVariant (
@@ -551,16 +549,14 @@ const CREATE_TABLES = [
     price INT, stock INT DEFAULT 0, image VARCHAR(500), sortOrder INT DEFAULT 0,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_productId (productId), INDEX idx_sku (sku),
-    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
+    INDEX idx_productId (productId), INDEX idx_sku (sku)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS ProductVariantGroup (
     id INT AUTO_INCREMENT PRIMARY KEY,
     productId INT NOT NULL, type VARCHAR(50) NOT NULL,
     name VARCHAR(100) NOT NULL, sortOrder INT DEFAULT 0,
-    INDEX idx_productId (productId),
-    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
+    INDEX idx_productId (productId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS ProductScheduledPublish (
@@ -571,8 +567,7 @@ const CREATE_TABLES = [
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_productId (productId), INDEX idx_status (status),
-    INDEX idx_scheduledAt (scheduledAt),
-    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
+    INDEX idx_scheduledAt (scheduledAt)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS StockAlert (
@@ -581,9 +576,7 @@ const CREATE_TABLES = [
     threshold INT NOT NULL DEFAULT 5, notified TINYINT(1) DEFAULT 0,
     lastNotifiedAt DATETIME,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_productId (productId), INDEX idx_shopId (shopId),
-    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE,
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_productId (productId), INDEX idx_shopId (shopId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS ReturnRequest (
@@ -598,12 +591,7 @@ const CREATE_TABLES = [
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_orderId (orderId), INDEX idx_shopId (shopId),
-    INDEX idx_status (status),
-    FOREIGN KEY (orderId) REFERENCES \`Order\`(id) ON DELETE CASCADE,
-    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE,
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
-    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
-    FOREIGN KEY (reviewedBy) REFERENCES User(id) ON DELETE SET NULL
+    INDEX idx_status (status)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS ShopSettings (
@@ -612,8 +600,7 @@ const CREATE_TABLES = [
     returnPolicy TEXT, contactInfo JSON,
     seoDescription TEXT, seoKeywords VARCHAR(500),
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS PromoCode (
@@ -629,8 +616,7 @@ const CREATE_TABLES = [
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_code_shop (shopId, code),
     INDEX idx_shopId (shopId), INDEX idx_code (code),
-    INDEX idx_active (isActive),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_active (isActive)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS FlashSale (
@@ -642,17 +628,14 @@ const CREATE_TABLES = [
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_shopId (shopId),
-    INDEX idx_active_dates (isActive, startDate, endDate),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_active_dates (isActive, startDate, endDate)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS FlashSaleProduct (
     id INT AUTO_INCREMENT PRIMARY KEY,
     flashSaleId VARCHAR(50) NOT NULL, productId INT NOT NULL,
     UNIQUE KEY uk_fs_product (flashSaleId, productId),
-    INDEX idx_productId (productId),
-    FOREIGN KEY (flashSaleId) REFERENCES FlashSale(id) ON DELETE CASCADE,
-    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
+    INDEX idx_productId (productId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS ProductPack (
@@ -664,8 +647,7 @@ const CREATE_TABLES = [
     isActive TINYINT(1) DEFAULT 1, startDate DATETIME, endDate DATETIME,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_shopId (shopId), INDEX idx_active (isActive),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_shopId (shopId), INDEX idx_active (isActive)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS BogoOffer (
@@ -678,8 +660,7 @@ const CREATE_TABLES = [
     isActive TINYINT(1) DEFAULT 1,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_shopId (shopId), INDEX idx_active (isActive),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_shopId (shopId), INDEX idx_active (isActive)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS SellerMessage (
@@ -691,10 +672,7 @@ const CREATE_TABLES = [
     isRead TINYINT(1) DEFAULT 0, readAt DATETIME,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_shopId (shopId), INDEX idx_userId (userId),
-    INDEX idx_orderId (orderId), INDEX idx_isRead (isRead),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
-    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
-    FOREIGN KEY (orderId) REFERENCES \`Order\`(id) ON DELETE SET NULL
+    INDEX idx_orderId (orderId), INDEX idx_isRead (isRead)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS SellerMessageReply (
@@ -702,8 +680,7 @@ const CREATE_TABLES = [
     messageId VARCHAR(50) NOT NULL,
     senderRole ENUM('seller','client') NOT NULL,
     message TEXT NOT NULL, createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_messageId (messageId),
-    FOREIGN KEY (messageId) REFERENCES SellerMessage(id) ON DELETE CASCADE
+    INDEX idx_messageId (messageId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS AutoReply (
@@ -714,8 +691,7 @@ const CREATE_TABLES = [
     isActive TINYINT(1) DEFAULT 1,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_shopId (shopId), INDEX idx_keyword (keyword),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_shopId (shopId), INDEX idx_keyword (keyword)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS MessageTemplate (
@@ -725,8 +701,7 @@ const CREATE_TABLES = [
     category VARCHAR(50) DEFAULT 'general',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_shopId (shopId),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_shopId (shopId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS SellerReport (
@@ -737,8 +712,7 @@ const CREATE_TABLES = [
     pdfPath VARCHAR(500),
     generatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_shopId (shopId),
-    INDEX idx_type_period (type, period),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_type_period (type, period)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS ApiKey (
@@ -750,8 +724,7 @@ const CREATE_TABLES = [
     expiresAt DATETIME, isActive TINYINT(1) DEFAULT 1,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_shopId (shopId), INDEX idx_keyPrefix (keyPrefix),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_shopId (shopId), INDEX idx_keyPrefix (keyPrefix)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS ApiRequestLog (
@@ -761,9 +734,7 @@ const CREATE_TABLES = [
     statusCode INT NOT NULL, ip VARCHAR(45), duration INT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_apiKeyId (apiKeyId), INDEX idx_shopId (shopId),
-    INDEX idx_createdAt (createdAt),
-    FOREIGN KEY (apiKeyId) REFERENCES ApiKey(id) ON DELETE SET NULL,
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE SET NULL
+    INDEX idx_createdAt (createdAt)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS AiRecommendation (
@@ -776,9 +747,7 @@ const CREATE_TABLES = [
     dismissed TINYINT(1) DEFAULT 0,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_shopId (shopId), INDEX idx_productId (productId),
-    INDEX idx_type (type), INDEX idx_applied (applied),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
-    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE SET NULL
+    INDEX idx_type (type), INDEX idx_applied (applied)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS AiPricingHistory (
@@ -788,9 +757,7 @@ const CREATE_TABLES = [
     appliedPrice INT, reason TEXT, confidence FLOAT,
     revenue_impact INT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_shopId (shopId), INDEX idx_productId (productId),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
-    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
+    INDEX idx_shopId (shopId), INDEX idx_productId (productId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS SellerNotification (
@@ -801,8 +768,7 @@ const CREATE_TABLES = [
     isRead TINYINT(1) DEFAULT 0, readAt DATETIME,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_shopId (shopId), INDEX idx_type (type),
-    INDEX idx_isRead (isRead), INDEX idx_createdAt (createdAt),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    INDEX idx_isRead (isRead), INDEX idx_createdAt (createdAt)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS SellerSecurity (
@@ -812,8 +778,7 @@ const CREATE_TABLES = [
     twoFactorSecret VARCHAR(255), backupCodes JSON,
     sessionTimeout INT DEFAULT 60, ipWhitelist JSON,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS LoginLog (
@@ -824,8 +789,7 @@ const CREATE_TABLES = [
     failReason VARCHAR(255), sessionId VARCHAR(255),
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_userId (userId), INDEX idx_createdAt (createdAt),
-    INDEX idx_success (success), INDEX idx_sessionId (sessionId),
-    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+    INDEX idx_success (success), INDEX idx_sessionId (sessionId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS ActionLog (
@@ -837,9 +801,7 @@ const CREATE_TABLES = [
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_shopId (shopId), INDEX idx_userId (userId),
     INDEX idx_action (action), INDEX idx_entity (entityType, entityId),
-    INDEX idx_createdAt (createdAt),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE SET NULL,
-    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+    INDEX idx_createdAt (createdAt)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS TeamMember (
@@ -853,10 +815,7 @@ const CREATE_TABLES = [
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_shop_user (shopId, userId),
     INDEX idx_shopId (shopId), INDEX idx_role (role),
-    INDEX idx_status (status),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
-    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
-    FOREIGN KEY (invitedBy) REFERENCES User(id) ON DELETE SET NULL
+    INDEX idx_status (status)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ]
 
@@ -969,6 +928,48 @@ export async function GET(request: Request) {
       "ALTER TABLE FraudReport ADD CONSTRAINT fk_fr_reportedby FOREIGN KEY (reportedBy) REFERENCES User(id) ON DELETE SET NULL",
       "ALTER TABLE FraudReport ADD CONSTRAINT fk_fr_reviewedby FOREIGN KEY (reviewedBy) REFERENCES User(id) ON DELETE SET NULL",
       "ALTER TABLE OrganicScoreCache ADD CONSTRAINT fk_osc_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+
+      "ALTER TABLE SellerVerification ADD CONSTRAINT fk_sv_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE SellerVerification ADD CONSTRAINT fk_sv_verifiedby FOREIGN KEY (verifiedBy) REFERENCES User(id) ON DELETE SET NULL",
+      "ALTER TABLE ProductVariant ADD CONSTRAINT fk_pv_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+      "ALTER TABLE ProductVariantGroup ADD CONSTRAINT fk_pvg_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+      "ALTER TABLE ProductScheduledPublish ADD CONSTRAINT fk_psp_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+      "ALTER TABLE StockAlert ADD CONSTRAINT fk_sa_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+      "ALTER TABLE StockAlert ADD CONSTRAINT fk_sa_shop2 FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_order FOREIGN KEY (orderId) REFERENCES `Order`(id) ON DELETE CASCADE",
+      "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+      "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
+      "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_reviewedby FOREIGN KEY (reviewedBy) REFERENCES User(id) ON DELETE SET NULL",
+      "ALTER TABLE ShopSettings ADD CONSTRAINT fk_ss_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE PromoCode ADD CONSTRAINT fk_pc_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE FlashSale ADD CONSTRAINT fk_fs_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE FlashSaleProduct ADD CONSTRAINT fk_fsp_flashsale FOREIGN KEY (flashSaleId) REFERENCES FlashSale(id) ON DELETE CASCADE",
+      "ALTER TABLE FlashSaleProduct ADD CONSTRAINT fk_fsp_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+      "ALTER TABLE ProductPack ADD CONSTRAINT fk_pp_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE BogoOffer ADD CONSTRAINT fk_bo_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
+      "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_order FOREIGN KEY (orderId) REFERENCES `Order`(id) ON DELETE SET NULL",
+      "ALTER TABLE SellerMessageReply ADD CONSTRAINT fk_smr_message FOREIGN KEY (messageId) REFERENCES SellerMessage(id) ON DELETE CASCADE",
+      "ALTER TABLE AutoReply ADD CONSTRAINT fk_ar_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE MessageTemplate ADD CONSTRAINT fk_mt_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE SellerReport ADD CONSTRAINT fk_sr_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE ApiKey ADD CONSTRAINT fk_ak_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE ApiRequestLog ADD CONSTRAINT fk_arl_apikey FOREIGN KEY (apiKeyId) REFERENCES ApiKey(id) ON DELETE SET NULL",
+      "ALTER TABLE ApiRequestLog ADD CONSTRAINT fk_arl_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE SET NULL",
+      "ALTER TABLE AiRecommendation ADD CONSTRAINT fk_airec_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE AiRecommendation ADD CONSTRAINT fk_airec_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE SET NULL",
+      "ALTER TABLE AiPricingHistory ADD CONSTRAINT fk_airph_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE AiPricingHistory ADD CONSTRAINT fk_airph_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+      "ALTER TABLE SellerNotification ADD CONSTRAINT fk_sn_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE SellerSecurity ADD CONSTRAINT fk_ss2_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE LoginLog ADD CONSTRAINT fk_ll_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
+      "ALTER TABLE ActionLog ADD CONSTRAINT fk_al_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE SET NULL",
+      "ALTER TABLE ActionLog ADD CONSTRAINT fk_al_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
+      "ALTER TABLE TeamMember ADD CONSTRAINT fk_tm_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE TeamMember ADD CONSTRAINT fk_tm_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
+      "ALTER TABLE TeamMember ADD CONSTRAINT fk_tm_invitedby FOREIGN KEY (invitedBy) REFERENCES User(id) ON DELETE SET NULL",
     ]
     for (const fk of fkConstraints) {
       try { await execute(fk) } catch { /* déjà existante */ }
