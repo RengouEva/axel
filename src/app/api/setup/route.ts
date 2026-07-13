@@ -323,20 +323,6 @@ const CREATE_TABLES = [
     FOREIGN KEY (reviewedBy) REFERENCES User(id) ON DELETE SET NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
-  `CREATE TABLE IF NOT EXISTS AdCampaignNotification (
-    id VARCHAR(50) PRIMARY KEY,
-    campaignId VARCHAR(50) NOT NULL,
-    userId INT,
-    type VARCHAR(50) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    message TEXT,
-    \`read\` TINYINT(1) DEFAULT 0,
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_campaignId (campaignId),
-    INDEX idx_userId (userId),
-    FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-
   `CREATE TABLE IF NOT EXISTS Guarantor (
     id VARCHAR(50) PRIMARY KEY,
     creditRequestId VARCHAR(50) NOT NULL,
@@ -474,6 +460,20 @@ const CREATE_TABLES = [
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_campaignId (campaignId),
     INDEX idx_type (type),
+    FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS AdCampaignNotification (
+    id VARCHAR(50) PRIMARY KEY,
+    campaignId VARCHAR(50) NOT NULL,
+    userId INT,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    \`read\` TINYINT(1) DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_campaignId (campaignId),
+    INDEX idx_userId (userId),
     FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ]

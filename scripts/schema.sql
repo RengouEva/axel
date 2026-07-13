@@ -500,6 +500,19 @@ CREATE TABLE IF NOT EXISTS AdClick (
   FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS AdEvent (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  campaignId VARCHAR(50) NOT NULL,
+  type ENUM('cart_add','sale','conversion') NOT NULL,
+  userId INT,
+  orderId VARCHAR(50),
+  revenue INT DEFAULT 0,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_campaignId (campaignId),
+  INDEX idx_type (type),
+  FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS AdCampaignNotification (
   id VARCHAR(50) PRIMARY KEY,
   campaignId VARCHAR(50) NOT NULL,
@@ -513,8 +526,6 @@ CREATE TABLE IF NOT EXISTS AdCampaignNotification (
   INDEX idx_userId (userId),
   FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS AdEvent (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   campaignId VARCHAR(50) NOT NULL,
   type ENUM('cart_add','sale','conversion') NOT NULL,
