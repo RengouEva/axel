@@ -347,9 +347,9 @@ const CREATE_TABLES = [
     shopId VARCHAR(50) NOT NULL,
     userId INT NOT NULL,
     name VARCHAR(255) NOT NULL,
-    type ENUM('sponsored_product','sponsored_shop','banner','event') NOT NULL DEFAULT 'sponsored_product',
+    type VARCHAR(50) NOT NULL DEFAULT 'sponsored_product',
     objective VARCHAR(100) DEFAULT 'visibility',
-    status ENUM('draft','pending','active','paused','completed','cancelled','rejected') NOT NULL DEFAULT 'draft',
+    status VARCHAR(50) NOT NULL DEFAULT 'draft',
     budget INT NOT NULL DEFAULT 0,
     spent INT NOT NULL DEFAULT 0,
     startDate DATETIME NOT NULL,
@@ -382,11 +382,7 @@ const CREATE_TABLES = [
     INDEX idx_type (type),
     INDEX idx_category (targetCategory),
     INDEX idx_country (targetCountry),
-    INDEX idx_dates (startDate, endDate),
-    FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
-    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
-    FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE SET NULL,
-    FOREIGN KEY (approvedBy) REFERENCES User(id) ON DELETE SET NULL
+    INDEX idx_dates (startDate, endDate)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS AdPlacement (
@@ -409,9 +405,7 @@ const CREATE_TABLES = [
     bid INT NOT NULL DEFAULT 0,
     UNIQUE KEY uk_campaign_placement (campaignId, placementId),
     INDEX idx_campaignId (campaignId),
-    INDEX idx_placementId (placementId),
-    FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE,
-    FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE
+    INDEX idx_placementId (placementId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS AdImpression (
@@ -427,9 +421,7 @@ const CREATE_TABLES = [
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_campaignId (campaignId),
     INDEX idx_placementId (placementId),
-    INDEX idx_createdAt (createdAt),
-    FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE,
-    FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE
+    INDEX idx_createdAt (createdAt)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS AdClick (
@@ -445,22 +437,19 @@ const CREATE_TABLES = [
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_campaignId (campaignId),
     INDEX idx_placementId (placementId),
-    INDEX idx_createdAt (createdAt),
-    FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE,
-    FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE
+    INDEX idx_createdAt (createdAt)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS AdEvent (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     campaignId VARCHAR(50) NOT NULL,
-    type ENUM('cart_add','sale','conversion') NOT NULL,
+    type VARCHAR(50) NOT NULL,
     userId INT,
     orderId VARCHAR(50),
     revenue INT DEFAULT 0,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_campaignId (campaignId),
-    INDEX idx_type (type),
-    FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE
+    INDEX idx_type (type)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
   `CREATE TABLE IF NOT EXISTS AdCampaignNotification (
@@ -473,8 +462,7 @@ const CREATE_TABLES = [
     \`read\` TINYINT(1) DEFAULT 0,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_campaignId (campaignId),
-    INDEX idx_userId (userId),
-    FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE
+    INDEX idx_userId (userId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ]
 
@@ -563,12 +551,29 @@ export async function GET(request: Request) {
   const results: string[] = []
 
   try {
-    await execute("SET FOREIGN_KEY_CHECKS = 0")
     for (const sql of CREATE_TABLES) {
       await execute(sql)
     }
-    await execute("SET FOREIGN_KEY_CHECKS = 1")
     results.push(`${CREATE_TABLES.length} tables créées/vérifiées`)
+
+    const fkConstraints = [
+      "ALTER TABLE AdCampaign ADD CONSTRAINT fk_adcampaign_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE AdCampaign ADD CONSTRAINT fk_adcampaign_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
+      "ALTER TABLE AdCampaign ADD CONSTRAINT fk_adcampaign_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE SET NULL",
+      "ALTER TABLE AdCampaign ADD CONSTRAINT fk_adcampaign_approvedby FOREIGN KEY (approvedBy) REFERENCES User(id) ON DELETE SET NULL",
+      "ALTER TABLE AdCampaignPlacement ADD CONSTRAINT fk_acp_campaign FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE",
+      "ALTER TABLE AdCampaignPlacement ADD CONSTRAINT fk_acp_placement FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE",
+      "ALTER TABLE AdImpression ADD CONSTRAINT fk_aimpression_campaign FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE",
+      "ALTER TABLE AdImpression ADD CONSTRAINT fk_aimpression_placement FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE",
+      "ALTER TABLE AdClick ADD CONSTRAINT fk_aclick_campaign FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE",
+      "ALTER TABLE AdClick ADD CONSTRAINT fk_aclick_placement FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE",
+      "ALTER TABLE AdEvent ADD CONSTRAINT fk_aevent_campaign FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE",
+      "ALTER TABLE AdCampaignNotification ADD CONSTRAINT fk_acn_campaign FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE",
+    ]
+    for (const fk of fkConstraints) {
+      try { await execute(fk) } catch { /* déjà existante */ }
+    }
+    results.push(`contraintes FK ajoutées/vérifiées`)
 
     for (const cat of CATEGORIES_SEED) {
       await execute("INSERT IGNORE INTO Category (name, slug, icon) VALUES (?, ?, ?)", [cat.name, cat.slug, cat.icon])
