@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Store, MapPin, Phone, Mail, Pencil, X, Save, AlertTriangle, CheckCircle, Loader2, Plus, Trash2, Search, Package, ImagePlus, Upload } from "lucide-react"
+import { Store, MapPin, Phone, Mail, Pencil, X, Save, AlertTriangle, CheckCircle, Loader2, Plus, Trash2, Search, Package, ImagePlus, Upload, Zap, TrendingUp } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import type { Country, City, District } from "@/data/delivery"
 import type { Category } from "@/data/categories"
@@ -88,6 +88,10 @@ export default function SellerBoutiquePage() {
   const [rateInputs, setRateInputs] = useState<Record<string, string>>(Object.fromEntries(creditDurations.map(d => [String(d), ""])))
   const [productSearch, setProductSearch] = useState("")
   const [productError, setProductError] = useState("")
+  const [boostedIds, setBoostedIds] = useState<Set<number>>(new Set())
+  const [boostLoading, setBoostLoading] = useState(false)
+  const [boostModal, setBoostModal] = useState<{ productId: number; productName: string } | null>(null)
+  const [boostDuration, setBoostDuration] = useState(7)
 
   useEffect(() => {
     fetch("/api/categories").then(r => r.json()).then(data => setCategories(data.categories || []))
@@ -127,6 +131,20 @@ export default function SellerBoutiquePage() {
       console.error("Erreur chargement produits")
     }
   }, [])
+
+  const fetchBoosts = useCallback(async (shopId: string) => {
+    try {
+      const res = await fetch("/api/products/boost", { headers: getAuthHeaders() })
+      const data = await res.json()
+      const ids = new Set<number>()
+      if (data.boosts) data.boosts.forEach((b: any) => { if (b.productId) ids.add(b.productId) })
+      setBoostedIds(ids)
+    } catch { /* ignore */ }
+  }, [getAuthHeaders])
+
+  useEffect(() => {
+    if (shop) fetchBoosts(shop.id)
+  }, [shop, fetchBoosts])
 
   useEffect(() => {
     fetchShop()
@@ -273,6 +291,28 @@ export default function SellerBoutiquePage() {
       setProducts(prev => prev.filter(p => p.id !== deleteProductId))
       setDeleteProductId(null)
     }
+  }
+
+  const handleBoost = async () => {
+    if (!boostModal || !shop) return
+    setBoostLoading(true)
+    try {
+      const res = await fetch("/api/products/boost", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ productId: boostModal.productId, durationDays: boostDuration }),
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error); return }
+      if (data.free) {
+        setBoostedIds(prev => new Set(prev).add(boostModal.productId))
+        alert("✅ Produit boosté avec succès !")
+      } else if (data.requiresPayment) {
+        alert(`💳 Paiement requis : ${data.price} F CFA. Transaction : ${data.transaction.id}`)
+      }
+      setBoostModal(null)
+    } catch { alert("Erreur lors du boost") }
+    finally { setBoostLoading(false) }
   }
 
   const startEdit = () => {
@@ -717,6 +757,20 @@ export default function SellerBoutiquePage() {
               </div>
             )}
 
+            {products.length > 0 && products.some(p => !boostedIds.has(p.id)) && (
+              <div className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-purple-500/5 to-amber-500/5 border-2 border-purple-500/20">
+                <div className="flex items-center gap-3">
+                  <Zap className="w-5 h-5 text-purple-400 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">
+                      {products.filter(p => !boostedIds.has(p.id)).length} produit{products.filter(p => !boostedIds.has(p.id)).length > 1 ? "s" : ""} non boosté{products.filter(p => !boostedIds.has(p.id)).length > 1 ? "s" : ""}
+                    </p>
+                    <p className="text-xs text-[var(--text-secondary)]">Le boost augmente la visibilité de vos produits dans les résultats de recherche.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] overflow-hidden">
               <div className="p-4 border-b-2 border-[var(--border)]">
                 <div className="relative max-w-xs">
@@ -731,7 +785,7 @@ export default function SellerBoutiquePage() {
                       <th className="text-left px-6 py-4 font-semibold">Catégorie</th>
                       <th className="text-right px-6 py-4 font-semibold">Prix</th>
                       <th className="text-center px-6 py-4 font-semibold">Stock</th>
-                      <th className="text-center px-6 py-4 font-semibold">Promo</th>
+                      <th className="text-center px-6 py-4 font-semibold">Boost</th>
                       <th className="text-right px-6 py-4 font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -740,7 +794,7 @@ export default function SellerBoutiquePage() {
                       p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
                       p.brand.toLowerCase().includes(productSearch.toLowerCase())
                     ).length === 0 ? (
-                      <tr><td colSpan={6} className="text-center py-12 text-[var(--text-secondary)]">
+                      <tr><td colSpan={7} className="text-center py-12 text-[var(--text-secondary)]">
                         <Package className="w-8 h-8 mx-auto mb-2 opacity-40" />
                         Aucun produit trouvé
                       </td></tr>
@@ -766,6 +820,18 @@ export default function SellerBoutiquePage() {
                           {p.inStock ? <Badge variant="stock">En stock</Badge> : <Badge variant="promo">Épuisé</Badge>}
                         </td>
                         <td className="px-6 py-4 text-center">{p.promotion ? <CheckCircle className="w-4 h-4 text-green-500 mx-auto" /> : <span className="text-[#D1D5DB]">&mdash;</span>}</td>
+                        <td className="px-6 py-4 text-center">
+                          {boostedIds.has(p.id) ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-500/10 text-purple-400">
+                              <Zap className="w-3 h-3" /> Boosté
+                            </span>
+                          ) : (
+                            <button onClick={() => setBoostModal({ productId: p.id, productName: p.name })}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors">
+                              <TrendingUp className="w-3 h-3" /> Booster
+                            </button>
+                          )}
+                        </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
                             <button onClick={() => openEditProduct(p)} className="p-2 rounded-xl hover:bg-[var(--text-link)]/10 text-[var(--text-secondary)] hover:text-[var(--text-link)] transition-colors">
@@ -783,6 +849,41 @@ export default function SellerBoutiquePage() {
               </div>
             </div>
           </AnimatedDiv>
+        )}
+
+        {boostModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <AnimatedDiv fade slideUp className="bg-[var(--bg-primary)] rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+              <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center mx-auto mb-4">
+                <Zap className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-bold text-[var(--text-primary)] text-center mb-2">Booster un produit</h3>
+              <p className="text-sm text-[var(--text-secondary)] text-center mb-4">{boostModal.productName}</p>
+              <div className="space-y-3 mb-6">
+                <label className="block text-sm font-medium text-[var(--text-primary)]">Durée du boost</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { days: 7, price: 2000, label: "7 jours" },
+                    { days: 15, price: 3500, label: "15 jours" },
+                    { days: 30, price: 5000, label: "30 jours" },
+                  ].map(o => (
+                    <button key={o.days} onClick={() => setBoostDuration(o.days)}
+                      className={`p-3 rounded-xl text-center transition-all ${boostDuration === o.days ? "bg-[var(--text-link)] text-white" : "bg-[var(--bg-secondary)] text-[var(--text-primary)] border-2 border-[var(--border)]"}`}>
+                      <p className="text-xs font-semibold">{o.label}</p>
+                      <p className="text-[10px] opacity-80">{o.price} F</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => setBoostModal(null)} disabled={boostLoading}>Annuler</Button>
+                <button onClick={handleBoost} disabled={boostLoading}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-amber-500 text-white font-semibold hover:brightness-110 transition-all disabled:opacity-50">
+                  {boostLoading ? "Boost en cours..." : "Booster"}
+                </button>
+              </div>
+            </AnimatedDiv>
+          </div>
         )}
 
         {deleteProductId && (
