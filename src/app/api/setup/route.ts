@@ -464,6 +464,69 @@ const CREATE_TABLES = [
     INDEX idx_campaignId (campaignId),
     INDEX idx_userId (userId)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS ProductEvent (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    productId INT NOT NULL,
+    event ENUM('view','click','favorite','cart_add','purchase') NOT NULL,
+    userId INT,
+    sessionId VARCHAR(255),
+    ip VARCHAR(45),
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_productId (productId),
+    INDEX idx_event (event),
+    INDEX idx_createdAt (createdAt),
+    INDEX idx_productEvent (productId, event, createdAt)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS SellerActivity (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shopId VARCHAR(50) NOT NULL,
+    avgResponseTime INT DEFAULT 0,
+    cancellationRate FLOAT DEFAULT 0,
+    availability FLOAT DEFAULT 1.0,
+    totalOrders INT DEFAULT 0,
+    completedOrders INT DEFAULT 0,
+    lastActiveAt DATETIME,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_shopId (shopId),
+    INDEX idx_shopId (shopId)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS FraudReport (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    productId INT NOT NULL,
+    reportedBy INT,
+    reason VARCHAR(255) NOT NULL,
+    details TEXT,
+    score INT DEFAULT 0,
+    status ENUM('pending','investigating','confirmed','rejected') DEFAULT 'pending',
+    actionTaken VARCHAR(255),
+    reviewedBy INT,
+    reviewedAt DATETIME,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_productId (productId),
+    INDEX idx_status (status),
+    INDEX idx_createdAt (createdAt)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS OrganicScoreCache (
+    productId INT PRIMARY KEY,
+    totalScore FLOAT NOT NULL DEFAULT 0,
+    relevanceScore FLOAT DEFAULT 0,
+    qualityScore FLOAT DEFAULT 0,
+    freshnessScore FLOAT DEFAULT 0,
+    availabilityScore FLOAT DEFAULT 0,
+    priceScore FLOAT DEFAULT 0,
+    sellerReputationScore FLOAT DEFAULT 0,
+    performanceScore FLOAT DEFAULT 0,
+    activityScore FLOAT DEFAULT 0,
+    userExperienceScore FLOAT DEFAULT 0,
+    calculatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expiresAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_totalScore (totalScore DESC),
+    INDEX idx_expiresAt (expiresAt)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ]
 
 const CATEGORIES_SEED = [
@@ -569,6 +632,12 @@ export async function GET(request: Request) {
       "ALTER TABLE AdClick ADD CONSTRAINT fk_aclick_placement FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE",
       "ALTER TABLE AdEvent ADD CONSTRAINT fk_aevent_campaign FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE",
       "ALTER TABLE AdCampaignNotification ADD CONSTRAINT fk_acn_campaign FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE",
+      "ALTER TABLE ProductEvent ADD CONSTRAINT fk_pe_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+      "ALTER TABLE SellerActivity ADD CONSTRAINT fk_sa_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
+      "ALTER TABLE FraudReport ADD CONSTRAINT fk_fr_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
+      "ALTER TABLE FraudReport ADD CONSTRAINT fk_fr_reportedby FOREIGN KEY (reportedBy) REFERENCES User(id) ON DELETE SET NULL",
+      "ALTER TABLE FraudReport ADD CONSTRAINT fk_fr_reviewedby FOREIGN KEY (reviewedBy) REFERENCES User(id) ON DELETE SET NULL",
+      "ALTER TABLE OrganicScoreCache ADD CONSTRAINT fk_osc_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
     ]
     for (const fk of fkConstraints) {
       try { await execute(fk) } catch { /* déjà existante */ }
@@ -605,6 +674,31 @@ export async function GET(request: Request) {
         [p.id, p.slot, p.name, p.description, p.basePrice, p.auctionEnabled])
     }
     results.push(`${AD_PLACEMENTS_SEED.length} emplacements publicitaires insérés`)
+
+    const productColumns = [
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasVideo TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasFeatures TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasTechnicalInfo TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS isDuplicate TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS isSpam TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasCopiedContent TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasInaccurateInfo TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasMisleadingContent TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS isVerifiedListing TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasAuthenticPhotos TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Shop ADD COLUMN IF NOT EXISTS sellerVerified TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Shop ADD COLUMN IF NOT EXISTS responseTime INT DEFAULT 0",
+    ]
+    for (const col of productColumns) {
+      try { await execute(col) } catch { }
+    }
+    results.push(`colonnes supplémentaires ajoutées/vérifiées`)
+
+    await execute(
+      `INSERT IGNORE INTO SellerActivity (shopId, totalOrders, completedOrders, availability)
+       SELECT id, totalSales, totalSales, 1.0 FROM Shop`
+    )
+    results.push(`données initiales SellerActivity insérées`)
 
     return NextResponse.json({ success: true, logs: results })
   } catch (e: unknown) {

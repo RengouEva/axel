@@ -3,6 +3,7 @@ export type { Product }
 export { hasCreditRates } from "./product-types"
 import { queryAll, queryOne } from "@/lib/db"
 import { cached } from "@/lib/cache"
+import { getOrganicProducts, batchCalculateScores, normalizeScores, applyRotation } from "./organic-ranking"
 
 export function formatProduct(p: any): Product {
   return {
@@ -114,4 +115,61 @@ export async function getNewProducts(limit: number = 4): Promise<Product[]> {
   )
   return formatProductList(data)
   }, 60_000)
+}
+
+export async function getRankedProducts(options: {
+  category?: string
+  search?: string
+  brand?: string
+  page?: number
+  limit?: number
+  sort?: string
+  country?: string
+  city?: string
+} = {}): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> {
+  const params = new URLSearchParams()
+  if (options.category) params.set("category", options.category)
+  if (options.search) params.set("search", options.search)
+  if (options.brand) params.set("brand", options.brand)
+  if (options.sort) params.set("sort", options.sort)
+  if (options.country) params.set("country", options.country)
+  if (options.city) params.set("city", options.city)
+
+  const result = await getOrganicProducts(
+    params,
+    options.page || 1,
+    options.limit || 20
+  )
+
+  return {
+    products: formatProductList(result.products),
+    total: result.total,
+    page: result.page,
+    totalPages: result.totalPages,
+  }
+}
+
+export async function getRankedProductsForCategory(
+  categoryName: string,
+  limit: number = 8
+): Promise<Product[]> {
+  const params = new URLSearchParams()
+  params.set("category", categoryName)
+  params.set("limit", String(limit))
+
+  const result = await getOrganicProducts(params, 1, limit)
+  return formatProductList(result.products)
+}
+
+export async function getRankedProductsByCategory(categoryName: string): Promise<Product[]> {
+  return getRankedProductsForCategory(categoryName, 50)
+}
+
+export async function getRankedProductsByShop(shopSlug: string): Promise<Product[]> {
+  const params = new URLSearchParams()
+  params.set("shopId", shopSlug)
+  params.set("limit", "50")
+
+  const result = await getOrganicProducts(params, 1, 50)
+  return formatProductList(result.products)
 }

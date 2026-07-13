@@ -3,113 +3,12 @@ import { queryOne, queryAll, execute } from "@/lib/db"
 import { validateInput, productCreateSchema } from "@/lib/validations"
 import { requireRole } from "@/lib/require-auth"
 import { checkApiRateLimit, getRateLimitHeaders } from "@/lib/rate-limit"
-import { cached } from "@/lib/cache"
+import { getOrganicProducts as getOrganicProductsV2 } from "@/data/organic-ranking"
+import { formatProductList } from "@/data/products"
 
 const PAGE_SIZE = 20
 
-async function calculateOrganicScore(product: any, searchParams?: URLSearchParams): Promise<number> {
-  let score = 100
-  
-  const now = new Date()
-  const daysOld = Math.floor((now.getTime() - new Date(product.createdAt).getTime()) / (1000 * 60 * 60 * 24))
-  
-  if (daysOld > 90) score -= Math.min(daysOld - 90, 50)
-  else if (daysOld > 30) score -= (daysOld - 30) * 0.5
-  
-  if (!product.inStock) score -= 30
-  if (product.rating < 3) score -= 15 * (3 - product.rating)
-  if (product.reviews < 5) score -= 10 * (5 - product.reviews)
-  if (product.price > 50000) score -= 20
-  
-  if (searchParams?.get('search')) {
-    const search = searchParams.get('search').toLowerCase()
-    if (product.name.toLowerCase().includes(search)) score += 20
-    if (product.description?.toLowerCase().includes(search)) score += 10
-    if (product.brand.toLowerCase().includes(search)) score += 15
-  }
-  
-  return Math.max(0, score)
-}
-
-async function getOrganicProducts(searchParams: URLSearchParams, page: number, limit: number): Promise<any[]> {
-  const category = searchParams.get('category')
-  const search = searchParams.get('search')
-  
-  let conditions = []
-  let params = []
-  
-  if (category && category !== 'all') {
-    conditions.push('p.category = ?')
-    params.push(category)
-  }
-  
-  if (search) {
-    conditions.push('(p.name LIKE ? OR p.brand LIKE ? OR p.description LIKE ?)')
-    params.push(`%${search}%`, `%${search}%`, `%${search}%`)
-  }
-  
-  const whereSQL = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
-  
-  const products = await queryAll<any>(
-    `SELECT p.*, s.id as shop_id, s.name as shop_name, s.slug as shop_slug, s.logo as shop_logo, s.category as shop_category
-     FROM Product p LEFT JOIN Shop s ON s.id = p.shopId ${whereSQL} ORDER BY p.createdAt DESC LIMIT ? OFFSET ?`,
-    [...params, limit, (page - 1) * limit]
-  )
-  
-  const scoredProducts = await Promise.all(
-    products.map(async (product) => {
-      const score = await calculateOrganicScore(product, searchParams)
-      return { ...product, organicScore: score }
-    })
-  )
-  
-  scoredProducts.sort((a, b) => b.organicScore - a.organicScore)
-  
-  return scoredProducts
-}
-
 export async function GET(request: Request) {
-  try {
-    const auth = await requireAuth(request)
-    if (!auth.success) return auth.response
-
-    const { searchParams } = new URL(request.url)
-    const category = searchParams.get('category')
-    const search = searchParams.get('search')
-    
-    const now = new Date()
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || String(PAGE_SIZE))))
-    
-    const [products, totalRow] = await Promise.all([
-      getOrganicProducts(searchParams, page, limit),
-      queryOne<{ count: number }>(
-        `SELECT COUNT(*) as count FROM Product WHERE promotion = 0 AND inStock = 1 AND sellerVerified = 1`,
-        []
-      ),
-    ])
-    
-    const total = totalRow?.count ?? 0
-    
-    return NextResponse.json({
-      products,
-      total,
-      page,
-      pageSize: limit,
-      totalPages: Math.ceil(total / limit),
-    })
-  } catch (error) {
-    console.error("[PRODUCTS_GET]", error)
-    return NextResponse.json({ error: "Erreur interne" }, { status: 500 })
-  }
-}
-
-export async function POST(request: Request) {
-  
-  return Math.max(0, score)
-}
-
-
   try {
     const ip = request.headers.get("x-forwarded-for") || "unknown"
     const rateLimit = checkApiRateLimit(`products:${ip}`)
@@ -120,12 +19,29 @@ export async function POST(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
+    const organic = searchParams.get("organic") !== "false"
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || String(PAGE_SIZE))))
+
+    if (organic) {
+      const result = await getOrganicProductsV2(searchParams, page, limit)
+      const formatted = formatProductList(result.products.map((p: any) => ({
+        ...p,
+        images: typeof p.images === "string" ? p.images : JSON.stringify(p.images || []),
+      })))
+      return NextResponse.json({
+        products: formatted,
+        total: result.total,
+        page: result.page,
+        pageSize: result.pageSize,
+        totalPages: result.totalPages,
+      }, { headers })
+    }
+
     const category = searchParams.get("category")
     const search = searchParams.get("search")
     const sort = searchParams.get("sort")
     const id = searchParams.get("id")
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || String(PAGE_SIZE))))
 
     if (id) {
       const product = await queryOne<any>(
