@@ -32,18 +32,28 @@ export default function AdminProductsPage() {
   const [deleting, setDeleting] = useState(false)
 
   const [search, setSearch] = useState("")
+  const [shopFilter, setShopFilter] = useState("")
 
   const [boostModal, setBoostModal] = useState(false)
   const [boostProduct, setBoostProduct] = useState<AdminProduct | null>(null)
   const [boostDays, setBoostDays] = useState("30")
   const [boosting, setBoosting] = useState(false)
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const shopId = params.get("shopId")
+    const shopName = params.get("shopName")
+    if (shopId) setShopFilter(shopId)
+    if (shopName) setSearch(shopName)
+  }, [])
+
   const filtered = products.filter(
     (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.brand.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.toLowerCase().includes(search.toLowerCase()) ||
-      (p.shop?.name || "").toLowerCase().includes(search.toLowerCase())
+      (!shopFilter || p.shop?.id === shopFilter) &&
+      (p.name.toLowerCase().includes(search.toLowerCase()) ||
+       p.brand.toLowerCase().includes(search.toLowerCase()) ||
+       p.category.toLowerCase().includes(search.toLowerCase()) ||
+       (p.shop?.name || "").toLowerCase().includes(search.toLowerCase()))
   )
 
   const showToast = useCallback((type: "success" | "error", message: string) => {
@@ -55,7 +65,8 @@ export default function AdminProductsPage() {
     const headers = getAuthHeaders()
     setLoading(true)
     try {
-      const res = await fetch("/api/products?limit=100", { headers })
+      const url = shopFilter ? `/api/products?limit=100&shopId=${shopFilter}` : "/api/products?limit=100"
+      const res = await fetch(url, { headers })
       const data = await res.json()
       setProducts(data.products || [])
     } catch {
@@ -63,7 +74,7 @@ export default function AdminProductsPage() {
     } finally {
       setLoading(false)
     }
-  }, [showToast])
+  }, [showToast, shopFilter])
 
   useEffect(() => {
     if (user?.role === "admin") fetchProducts()
@@ -143,11 +154,18 @@ export default function AdminProductsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center gap-4 mb-8">
-          <Link href="/admin" className="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-secondary)] transition-colors"><ArrowLeft className="w-5 h-5 text-[var(--text-secondary)]" /></Link>
+          <Link href={shopFilter ? "/admin/boutiques" : "/admin"} className="p-2 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-secondary)] transition-colors"><ArrowLeft className="w-5 h-5 text-[var(--text-secondary)]" /></Link>
           <div>
-            <h1 className="text-4xl font-bold text-[var(--text-primary)]">Produits</h1>
+            <h1 className="text-4xl font-bold text-[var(--text-primary)]">
+              {shopFilter && products[0]?.shop?.name ? `Produits · ${products[0].shop.name}` : "Produits"}
+            </h1>
             <p className="text-[var(--text-secondary)]">{products.length} références{search ? ` · ${filtered.length} trouvées` : ""}</p>
           </div>
+          {shopFilter && (
+            <Link href="/admin/boutiques" className="ml-auto text-sm text-[var(--text-link)] hover:underline">
+              Retour aux boutiques
+            </Link>
+          )}
         </div>
 
         <div className="relative mb-6">
@@ -192,7 +210,14 @@ export default function AdminProductsPage() {
                     <p className="text-[10px] text-[var(--text-secondary)]">{p.brand}</p>
                   </div>
                 </div>
-                <div className="col-span-2 text-xs text-[var(--text-secondary)]">{p.shop?.name || "Plateforme"}</div>
+                <div className="col-span-2 text-xs text-[var(--text-secondary)]">
+                  {p.shop ? (
+                    <Link href={`/admin/produits?shopId=${p.shop.id}&shopName=${encodeURIComponent(p.shop.name)}`}
+                      className="text-[var(--text-link)] hover:underline font-medium">
+                      {p.shop.name}
+                    </Link>
+                  ) : "Plateforme"}
+                </div>
                 <div className="col-span-2 text-sm font-bold text-[var(--text-primary)]">{p.price.toLocaleString("fr-FR")} F</div>
                 <div className="col-span-2 text-xs text-[var(--text-secondary)]">{p.category}</div>
                 <div className="col-span-1">

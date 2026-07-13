@@ -53,6 +53,11 @@ export async function GET(request: Request) {
       conditions.push("(p.name LIKE ? OR p.brand LIKE ?)")
       params.push(`%${search}%`, `%${search}%`)
     }
+    const shopId = searchParams.get("shopId")
+    if (shopId) {
+      conditions.push("p.shopId = ?")
+      params.push(shopId)
+    }
     const whereSQL = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : ""
 
     let orderBySQL = "ORDER BY p.id ASC"

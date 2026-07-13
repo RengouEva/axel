@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import {
   Store, Users, Shield, ArrowLeft, Crown, Trash2, Check, X, Loader2,
-  Sparkles, BadgeCheck, AlertTriangle, Star, TrendingUp, Headphones, Zap
+  Sparkles, BadgeCheck, AlertTriangle, Star, TrendingUp, Headphones, Zap, Package
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
@@ -213,18 +213,26 @@ export default function AdminBoutiquesPage() {
               <div className="col-span-2 text-xs text-[var(--text-secondary)]">{new Date(s.createdAt).toLocaleDateString("fr-FR")}</div>
               <div className="col-span-2 flex items-center gap-2">
                 {s.shopId && (
-                  <button
-                    onClick={() => {
-                      setPremiumShop(s)
-                      setPremiumPlanId(plans.find((p) => p.isActive)?.id.toString() || "")
-                      setPremiumDuration("30")
-                      setPremiumBadges({ hasPremiumBadge: true, hasVerifiedBadge: true, hasFeaturedBadge: false })
-                      setPremiumModal(true)
-                    }}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
-                  >
-                    <Crown className="w-3 h-3" /> Premium
-                  </button>
+                  <>
+                    <Link
+                      href={`/admin/produits?shopId=${s.shopId}&shopName=${encodeURIComponent(s.shopName || "")}`}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
+                    >
+                      <Package className="w-3 h-3" /> Produits
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setPremiumShop(s)
+                        setPremiumPlanId(plans.find((p) => p.isActive)?.id.toString() || "")
+                        setPremiumDuration("30")
+                        setPremiumBadges({ hasPremiumBadge: true, hasVerifiedBadge: true, hasFeaturedBadge: false })
+                        setPremiumModal(true)
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
+                    >
+                      <Crown className="w-3 h-3" /> Premium
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={() => setDeleteConfirm(s)}

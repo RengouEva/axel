@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Pencil, Trash2, Search, X, Package, Check, AlertTriangle, ImagePlus, Upload, Loader2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Search, X, Package, Check, AlertTriangle, ImagePlus, Upload, Loader2, Store } from "lucide-react"
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
 import Badge from "@/components/ui/badge"
@@ -169,7 +169,7 @@ export default function SellerProductsPage() {
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)]">
       <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-4xl font-bold text-[var(--text-primary)]">Gestion des produits</h1>
             <p className="text-[var(--text-secondary)]">{list.length} produits dans votre catalogue</p>
@@ -180,6 +180,10 @@ export default function SellerProductsPage() {
               <Plus className="w-4 h-4" /> Ajouter un produit
             </Button>
           </div>
+        </div>
+        <div className="mb-6 p-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-700 flex items-center gap-2">
+          <Store className="w-4 h-4 shrink-0" />
+          Gérez aussi vos produits depuis <Link href="/vendeur/boutique" className="font-semibold underline ml-1">votre boutique</Link>
         </div>
 
         {showForm && (
