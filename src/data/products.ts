@@ -23,6 +23,15 @@ export interface Product {
   boosted?: boolean
 }
 
+export function hasCreditRates(creditRates?: string): boolean {
+  if (!creditRates) return false
+  try {
+    return Object.values(JSON.parse(creditRates)).some(v => Number(v) > 0)
+  } catch {
+    return false
+  }
+}
+
 export function formatProduct(p: any): Product {
   return {
     id: p.id,

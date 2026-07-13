@@ -3,6 +3,7 @@
 import { Trash2, Plus, Star, ShoppingCart, X } from "lucide-react"
 import Button from "@/components/ui/button"
 import { AnimatedDiv } from "@/lib/animations"
+import { hasCreditRates } from "@/data/products"
 import { useCompare } from "@/lib/compare-context"
 import { useCart } from "@/lib/cart-context"
 import Link from "next/link"
@@ -49,7 +50,7 @@ export default function ComparePage() {
                     <div className="relative">
                       <button onClick={() => removeItem(p.id)} className="absolute -top-2 -right-2 w-8 h-8 rounded-xl bg-[var(--bg-primary)] border-2 border-[var(--border)] flex items-center justify-center hover:border-red-200 hover:text-red-500 transition-colors"><X className="w-4 h-4" /></button>
                       <div className="aspect-square rounded-2xl bg-[var(--bg-secondary)] overflow-hidden mb-3 max-w-[200px] mx-auto">
-                        <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                        <img src={p.image} alt={p.name} className="w-full h-full object-contain" />
                       </div>
                       <p className="text-xs text-[var(--text-link)] font-semibold">{p.brand}</p>
                       <h3 className="font-semibold text-[var(--text-primary)] text-sm">{p.name}</h3>
@@ -69,12 +70,18 @@ export default function ComparePage() {
                   <td key={p.id} className="p-4 text-center"><span className="text-xl font-bold text-[var(--text-primary)]">{p.price.toLocaleString("fr-FR")} F</span></td>
                 ))}
               </tr>
+              {items.some(p => hasCreditRates((p as any).creditRates)) && (
               <tr className="border-t border-[var(--border)]">
                 <td className="p-4 text-sm font-semibold text-[var(--text-primary)]">Prix/mois</td>
                 {items.map(p => (
-                  <td key={p.id} className="p-4 text-center"><span className="text-base font-bold text-[var(--text-link)]">{p.monthlyPrice.toLocaleString("fr-FR")} F/mois</span></td>
+                  <td key={p.id} className="p-4 text-center">
+                    {hasCreditRates((p as any).creditRates) ? (
+                      <span className="text-base font-bold text-[var(--text-link)]">{p.monthlyPrice.toLocaleString("fr-FR")} F/mois</span>
+                    ) : <span className="text-base text-[var(--text-muted)]">&mdash;</span>}
+                  </td>
                 ))}
               </tr>
+              )}
               <tr className="border-t border-[var(--border)]">
                 <td className="p-4 text-sm font-semibold text-[var(--text-primary)]">En stock</td>
                 {items.map(p => (

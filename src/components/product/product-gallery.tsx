@@ -54,7 +54,7 @@ export default function ProductGallery({ productName, images: customImages }: Ga
                 : "border-[var(--border)] hover:border-[var(--border-hover)]/30"
             }`}
           >
-            <img src={img} alt="" className="w-full h-full object-cover" />
+            <img src={img} alt="" className="w-full h-full object-contain" />
           </button>
         ))}
       </div>

@@ -12,6 +12,7 @@ import ProductGallery from "@/components/product/product-gallery"
 import CreditSimulator from "@/components/product/credit-simulator"
 import ProductReviews from "@/components/product/product-reviews"
 import type { Product } from "@/data/products"
+import { hasCreditRates } from "@/data/products"
 import { AnimatedDiv } from "@/lib/animations"
 import { useCart } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
@@ -129,16 +130,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   </span>
                 )}
               </div>
-              <p className="text-[var(--text-link)] font-semibold">
-                À partir de <span className="text-lg">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</span>
-              </p>
+              {hasCreditRates(product.creditRates) && (
+                <p className="text-[var(--text-link)] font-semibold">
+                  À partir de <span className="text-lg">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</span>
+                </p>
+              )}
               <p className="text-sm text-[var(--text-secondary)] flex items-center gap-1">
                 <Check className="w-4 h-4 text-green-500" aria-hidden="true" />
                 {product.inStock ? "En stock - Livraison sous 48h" : "Actuellement indisponible"}
               </p>
             </div>
 
-            <CreditSimulator price={product.price} productName={product.name} creditRates={product.creditRates} />
+            {hasCreditRates(product.creditRates) && (
+              <CreditSimulator price={product.price} productName={product.name} creditRates={product.creditRates} />
+            )}
 
             <div className="flex gap-3">
               <Button size="lg" className="flex-1" onClick={() => addItem(product)} aria-label="Ajouter au panier">

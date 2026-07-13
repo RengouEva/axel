@@ -24,7 +24,7 @@ export default function PromotionsPageContent({ products }: { products: Product[
           {products.map((product, i) => (
             <AnimatedDiv key={product.id} fade slideUp delay={i * 0.05} className="group bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
               <Link href={`/produit/${product.slug}`} className="relative aspect-square bg-[var(--bg-secondary)] overflow-hidden block">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" />
                 <div className="absolute top-3 left-3"><Badge variant="promo"><Zap className="w-3 h-3" /> -20%</Badge></div>
                 {product.boosted && (
                   <div className="absolute top-3 right-3">

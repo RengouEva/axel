@@ -645,7 +645,7 @@ export default function SellerBoutiquePage() {
                           </div>
                           {img && (
                             <div className="w-10 h-10 rounded-lg border-2 border-[var(--border)] overflow-hidden shrink-0">
-                              <img src={img} alt="" className="w-full h-full object-cover" />
+                              <img src={img} alt="" className="w-full h-full object-contain" />
                             </div>
                           )}
                           {productForm.images.length > 1 && (
@@ -752,7 +752,7 @@ export default function SellerBoutiquePage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-[var(--bg-secondary)] overflow-hidden shrink-0">
-                              <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                              <img src={p.image} alt={p.name} className="w-full h-full object-contain" />
                             </div>
                             <div>
                               <p className="font-semibold text-[var(--text-primary)]">{p.name}</p>

@@ -7,6 +7,7 @@ import { AnimatedDiv } from "@/lib/animations"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
 import { useCompare } from "@/lib/compare-context"
+import { hasCreditRates } from "@/data/products"
 import Link from "next/link"
 
 interface Product {
@@ -59,7 +60,7 @@ export default function ProductGridContent({ products }: { products: Product[] }
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
                     loading="lazy"
                   />
                   <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1.5 sm:gap-2">
@@ -68,9 +69,11 @@ export default function ProductGridContent({ products }: { products: Product[] }
                         <Zap className="w-3 h-3" /> Promo
                       </Badge>
                     )}
-                    <Badge variant="credit">
-                      <Zap className="w-3 h-3" /> À crédit
-                    </Badge>
+                    {hasCreditRates(product.creditRates) && (
+                      <Badge variant="credit">
+                        <Zap className="w-3 h-3" /> À crédit
+                      </Badge>
+                    )}
                   </div>
 
                   <button
@@ -124,9 +127,11 @@ export default function ProductGridContent({ products }: { products: Product[] }
                     <p className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
                       {product.price.toLocaleString("fr-FR")} F
                     </p>
-                    <p className="text-xs sm:text-sm text-[var(--text-link)] font-semibold">
-                      À partir de {product.monthlyPrice.toLocaleString("fr-FR")} F/mois
-                    </p>
+                    {hasCreditRates(product.creditRates) && (
+                      <p className="text-xs sm:text-sm text-[var(--text-link)] font-semibold">
+                        À partir de {product.monthlyPrice.toLocaleString("fr-FR")} F/mois
+                      </p>
+                    )}
                     {product.boosted && (
                       <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">
                         <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />

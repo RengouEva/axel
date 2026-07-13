@@ -34,7 +34,7 @@ export default function ImageZoom({ src, alt }: ImageZoomProps) {
       <img
         src={src}
         alt={alt}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain"
         style={{
           opacity: zoomed ? 0 : 1,
           transition: "opacity 0.2s ease-out",

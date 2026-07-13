@@ -203,7 +203,7 @@ export default function AdminProductsPage() {
               <AnimatedDiv key={p.id} fade slideUp delay={i * 0.02} className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[var(--border)] last:border-0 items-center hover:bg-[var(--bg-secondary)]/50 transition-colors">
                 <div className="col-span-3 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-[var(--bg-secondary)] overflow-hidden flex-shrink-0">
-                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                    <img src={p.image} alt={p.name} className="w-full h-full object-contain" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[var(--text-primary)]">{p.name}</p>

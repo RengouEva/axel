@@ -58,7 +58,7 @@ export default function CartPage() {
             {items.map((item) => (
               <AnimatedDiv key={item.product.id} fade slideUp className="flex gap-4 p-4 rounded-2xl border-2 border-[var(--border)]">
                 <Link href={`/produit/${item.product.slug}`} className="w-24 h-24 rounded-xl bg-[var(--bg-secondary)] overflow-hidden shrink-0">
-                  <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+                  <img src={item.product.image} alt={item.product.name} className="w-full h-full object-contain" />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4">

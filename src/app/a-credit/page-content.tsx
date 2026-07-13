@@ -4,6 +4,7 @@ import { CreditCard, Calculator, CheckCircle, Clock, Shield } from "lucide-react
 import Button from "@/components/ui/button"
 import CreditSimulator from "@/components/product/credit-simulator"
 import type { Product } from "@/data/products"
+import { hasCreditRates } from "@/data/products"
 import { AnimatedDiv } from "@/lib/animations"
 import { useCart } from "@/lib/cart-context"
 import Link from "next/link"
@@ -65,10 +66,10 @@ export default function ACreditPageContent({ products }: { products: Product[] }
         <AnimatedDiv fade slideUp className="mb-16">
           <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">Produits populaires à crédit</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.slice(0, 4).map((product, i) => (
+            {products.filter(p => hasCreditRates(p.creditRates)).slice(0, 4).map((product, i) => (
               <AnimatedDiv key={product.id} fade slideUp delay={i * 0.05} className="group bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
                 <Link href={`/produit/${product.slug}`} className="relative aspect-square bg-[var(--bg-secondary)] overflow-hidden block">
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" />
                 </Link>
                 <div className="p-4">
                   <p className="text-xs text-[var(--text-link)] font-semibold">{product.brand}</p>

@@ -6,6 +6,7 @@ import Badge from "@/components/ui/badge"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
 import { AnimatedDiv } from "@/lib/animations"
+import { hasCreditRates } from "@/data/products"
 import Link from "next/link"
 
 export default function FavoritesPage() {
@@ -35,10 +36,10 @@ export default function FavoritesPage() {
           {items.map((product, i) => (
             <AnimatedDiv key={product.id} fade slideUp delay={i * 0.05} className="group bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
               <Link href={`/produit/${product.slug}`} className="relative aspect-square bg-[var(--bg-secondary)] overflow-hidden block">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" />
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
                   {product.promotion && <Badge variant="promo">Promo</Badge>}
-                  <Badge variant="credit">À crédit</Badge>
+                  {hasCreditRates((product as any).creditRates) && <Badge variant="credit">À crédit</Badge>}
                 </div>
                 <button onClick={(e) => { e.preventDefault(); removeFavorite(product.id) }} className="absolute top-3 right-3 w-9 h-9 rounded-xl bg-white/90 flex items-center justify-center shadow-axel hover:bg-[var(--bg-primary)] transition-all"><Heart className="w-4 h-4 fill-red-500 text-red-500" /></button>
               </Link>
@@ -46,7 +47,7 @@ export default function FavoritesPage() {
                 <p className="text-xs text-[var(--text-link)] font-semibold">{product.brand}</p>
                 <Link href={`/produit/${product.slug}`}><h3 className="font-semibold text-[var(--text-primary)] text-sm hover:text-[var(--text-link)] transition-colors">{product.name}</h3></Link>
                 <p className="text-lg font-bold text-[var(--text-primary)] mt-1">{product.price.toLocaleString("fr-FR")} F</p>
-                <p className="text-xs text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</p>
+                {hasCreditRates((product as any).creditRates) && <p className="text-xs text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</p>}
                 <Button size="sm" className="w-full mt-3" onClick={() => { addItem(product); removeFavorite(product.id) }}><ShoppingCart className="w-4 h-4" /> Ajouter au panier</Button>
               </div>
             </AnimatedDiv>

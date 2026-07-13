@@ -6,6 +6,7 @@ import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
 import Badge from "@/components/ui/badge"
 import type { Product } from "@/data/products"
+import { hasCreditRates } from "@/data/products"
 import type { Category } from "@/data/categories"
 import { AnimatedDiv } from "@/lib/animations"
 import { useFavorites } from "@/lib/favorites-context"
@@ -60,10 +61,10 @@ export default function CategoryPageContent({ products, category }: { products: 
             {filtered.map((product, index) => (
               <AnimatedDiv key={product.id} fade slideUp delay={index * 0.05} className="group bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
                 <Link href={`/produit/${product.slug}`} className="relative aspect-square bg-[var(--bg-secondary)] overflow-hidden block">
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" />
                   <div className="absolute top-3 left-3 flex flex-col gap-2">
                     {product.promotion && <Badge variant="promo">Promo</Badge>}
-                    <Badge variant="credit">À crédit</Badge>
+                    {hasCreditRates(product.creditRates) && <Badge variant="credit">À crédit</Badge>}
                   </div>
                 </Link>
                 <div className="p-4">
@@ -71,7 +72,7 @@ export default function CategoryPageContent({ products, category }: { products: 
                   <Link href={`/produit/${product.slug}`}><h3 className="font-semibold text-[var(--text-primary)] text-sm line-clamp-1 hover:text-[var(--text-link)] transition-colors">{product.name}</h3></Link>
                   <div className="flex items-center gap-1 my-1"><span className="text-yellow-400 text-xs">★</span><span className="text-xs font-semibold text-[var(--text-primary)]">{product.rating}</span></div>
                   <p className="text-lg font-bold text-[var(--text-primary)]">{product.price.toLocaleString("fr-FR")} F</p>
-                  <p className="text-xs text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</p>
+                  {hasCreditRates(product.creditRates) && <p className="text-xs text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</p>}
                   <div className="flex gap-2 mt-3">
                     <Button size="sm" className="flex-1" onClick={() => addItem(product)}>Acheter</Button>
                     <button onClick={() => toggleFavorite(product)} className="w-9 h-9 rounded-xl border-2 border-[var(--border)] flex items-center justify-center hover:border-red-200 transition-colors">
@@ -86,11 +87,11 @@ export default function CategoryPageContent({ products, category }: { products: 
           <div className="space-y-4">
             {filtered.map((product, index) => (
               <AnimatedDiv key={product.id} fade slideUp delay={index * 0.03} className="flex gap-4 p-4 rounded-2xl border-2 border-[var(--border)] hover:shadow-axel-lg transition-all">
-                <Link href={`/produit/${product.slug}`} className="w-24 h-24 rounded-xl bg-[var(--bg-secondary)] overflow-hidden shrink-0"><img src={product.image} alt="" className="w-full h-full object-cover" /></Link>
+                <Link href={`/produit/${product.slug}`} className="w-24 h-24 rounded-xl bg-[var(--bg-secondary)] overflow-hidden shrink-0"><img src={product.image} alt="" className="w-full h-full object-contain" /></Link>
                 <div className="flex-1">
                   <p className="text-xs text-[var(--text-link)] font-semibold">{product.brand}</p>
                   <Link href={`/produit/${product.slug}`}><h3 className="font-semibold text-[var(--text-primary)] hover:text-[var(--text-link)]">{product.name}</h3></Link>
-                  <div className="flex items-center gap-3 mt-1"><span className="text-lg font-bold text-[var(--text-primary)]">{product.price.toLocaleString("fr-FR")} F</span><span className="text-xs text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</span></div>
+                  <div className="flex items-center gap-3 mt-1"><span className="text-lg font-bold text-[var(--text-primary)]">{product.price.toLocaleString("fr-FR")} F</span>{hasCreditRates(product.creditRates) && <span className="text-xs text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</span>}</div>
                   <div className="flex gap-2 mt-2"><Button size="sm" onClick={() => addItem(product)}>Ajouter au panier</Button></div>
                 </div>
               </AnimatedDiv>
