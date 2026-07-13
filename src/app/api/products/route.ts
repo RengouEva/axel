@@ -77,6 +77,17 @@ export async function GET(request: Request) {
       conditions.push("p.shopId = ?")
       params.push(shopId)
     }
+    const sellerId = searchParams.get("sellerId")
+    if (sellerId) {
+      const shop = await queryOne<{ id: string }>(
+        "SELECT id FROM Shop WHERE sellerId = ?",
+        [Number(sellerId)]
+      )
+      if (shop) {
+        conditions.push("p.shopId = ?")
+        params.push(shop.id)
+      }
+    }
     const whereSQL = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : ""
 
     let orderBySQL = "ORDER BY p.id ASC"
