@@ -6,6 +6,7 @@ import Hero from "@/components/sections/hero"
 import Categories from "@/components/sections/categories"
 import Promo from "@/components/sections/promo"
 import Features from "@/components/sections/features"
+import AdContainer from "@/components/ads/ad-container"
 
 export default function HomeClient({ productGrid }: { productGrid: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
@@ -52,8 +53,10 @@ export default function HomeClient({ productGrid }: { productGrid: React.ReactNo
   return (
     <>
       <Hero />
+      <AdContainer slot="HOME_HERO" variant="banner" className="my-6" />
       <Categories />
       {productGrid}
+      <AdContainer slot="HOME_INLINE" variant="card" limit={4} title="Sponsorisé pour vous" className="mt-8 mb-8" />
       <Promo />
       <Features />
     </>

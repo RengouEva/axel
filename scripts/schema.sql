@@ -387,3 +387,162 @@ INSERT IGNORE INTO TaxRate (countryId, rate, label) VALUES
   ('CI', 18, 'TVA Côte d''Ivoire'),
   ('SN', 18, 'TVA Sénégal'),
   ('GA', 18, 'TVA Gabon');
+
+-- ============================================================
+-- AXEL ADS — Module publicitaire intelligent
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS AdCampaign (
+  id VARCHAR(50) PRIMARY KEY,
+  shopId VARCHAR(50) NOT NULL,
+  userId INT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  type ENUM('sponsored_product','sponsored_shop','banner','event') NOT NULL DEFAULT 'sponsored_product',
+  objective VARCHAR(100) DEFAULT 'visibility',
+  status ENUM('draft','pending','active','paused','completed','cancelled','rejected') NOT NULL DEFAULT 'draft',
+  budget INT NOT NULL DEFAULT 0,
+  spent INT NOT NULL DEFAULT 0,
+  startDate DATETIME NOT NULL,
+  endDate DATETIME NOT NULL,
+  dailyBudget INT DEFAULT 0,
+  targetCountry VARCHAR(10),
+  targetCity VARCHAR(20),
+  targetDistrict VARCHAR(20),
+  targetCategory VARCHAR(100),
+  productId INT,
+  bannerImage VARCHAR(500),
+  bannerUrl VARCHAR(500),
+  impressions INT NOT NULL DEFAULT 0,
+  clicks INT NOT NULL DEFAULT 0,
+  ctr FLOAT NOT NULL DEFAULT 0,
+  avgCpc INT NOT NULL DEFAULT 0,
+  avgCpm INT NOT NULL DEFAULT 0,
+  cartAdds INT NOT NULL DEFAULT 0,
+  sales INT NOT NULL DEFAULT 0,
+  conversionRate FLOAT NOT NULL DEFAULT 0,
+  roi FLOAT NOT NULL DEFAULT 0,
+  qualityScore FLOAT NOT NULL DEFAULT 1.0,
+  approvedAt DATETIME,
+  approvedBy INT,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_shopId (shopId),
+  INDEX idx_userId (userId),
+  INDEX idx_status (status),
+  INDEX idx_type (type),
+  INDEX idx_category (targetCategory),
+  INDEX idx_country (targetCountry),
+  INDEX idx_dates (startDate, endDate),
+  FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
+  FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+  FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE SET NULL,
+  FOREIGN KEY (approvedBy) REFERENCES User(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS AdPlacement (
+  id VARCHAR(50) PRIMARY KEY,
+  slot VARCHAR(100) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  basePrice INT NOT NULL DEFAULT 0,
+  auctionEnabled TINYINT(1) DEFAULT 1,
+  isActive TINYINT(1) DEFAULT 1,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_slot (slot),
+  INDEX idx_active (isActive)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS AdCampaignPlacement (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  campaignId VARCHAR(50) NOT NULL,
+  placementId VARCHAR(50) NOT NULL,
+  bid INT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_campaign_placement (campaignId, placementId),
+  INDEX idx_campaignId (campaignId),
+  INDEX idx_placementId (placementId),
+  FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE,
+  FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS AdImpression (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  campaignId VARCHAR(50) NOT NULL,
+  placementId VARCHAR(50) NOT NULL,
+  userId INT,
+  sessionId VARCHAR(255),
+  ip VARCHAR(45),
+  userAgent TEXT,
+  cost INT NOT NULL DEFAULT 0,
+  weighted TINYINT(1) DEFAULT 1,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_campaignId (campaignId),
+  INDEX idx_placementId (placementId),
+  INDEX idx_createdAt (createdAt),
+  FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE,
+  FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS AdClick (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  campaignId VARCHAR(50) NOT NULL,
+  placementId VARCHAR(50) NOT NULL,
+  userId INT,
+  sessionId VARCHAR(255),
+  ip VARCHAR(45),
+  userAgent TEXT,
+  cost INT NOT NULL DEFAULT 0,
+  fraudulent TINYINT(1) DEFAULT 0,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_campaignId (campaignId),
+  INDEX idx_placementId (placementId),
+  INDEX idx_createdAt (createdAt),
+  FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE,
+  FOREIGN KEY (placementId) REFERENCES AdPlacement(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS AdCampaignNotification (
+  id VARCHAR(50) PRIMARY KEY,
+  campaignId VARCHAR(50) NOT NULL,
+  userId INT,
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  message TEXT,
+  read TINYINT(1) DEFAULT 0,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_campaignId (campaignId),
+  INDEX idx_userId (userId),
+  FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS AdEvent (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  campaignId VARCHAR(50) NOT NULL,
+  type ENUM('cart_add','sale','conversion') NOT NULL,
+  userId INT,
+  orderId VARCHAR(50),
+  revenue INT DEFAULT 0,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_campaignId (campaignId),
+  INDEX idx_type (type),
+  FOREIGN KEY (campaignId) REFERENCES AdCampaign(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Emplacements par défaut
+INSERT IGNORE INTO AdPlacement (id, slot, name, description, basePrice, auctionEnabled) VALUES
+  ('HOME_HERO', 'HOME_HERO', 'Bandeau Hero Accueil', 'Grand bandeau premium en haut de la page d\'accueil', 5000, 0),
+  ('HOME_FEATURED', 'HOME_FEATURED', 'Produits à la Une', 'Produits sponsorisés sous les catégories sur l\'accueil', 2000, 1),
+  ('HOME_INLINE', 'HOME_INLINE', 'Insertion Accueil', 'Produit sponsorisé inséré dans le flux de l\'accueil', 1500, 1),
+  ('SEARCH_TOP', 'SEARCH_TOP', 'Haut de Recherche', 'Produits sponsorisés avant les résultats organiques', 3000, 1),
+  ('SEARCH_INLINE', 'SEARCH_INLINE', 'Dans la Recherche', 'Insertion régulière dans les résultats de recherche', 2000, 1),
+  ('SEARCH_BOTTOM', 'SEARCH_BOTTOM', 'Bas de Recherche', 'Suggestions sponsorisées en fin de recherche', 1000, 1),
+  ('CATEGORY_TOP', 'CATEGORY_TOP', 'Bannière Catégorie', 'Bannière en haut des pages catégories', 2500, 0),
+  ('CATEGORY_INLINE', 'CATEGORY_INLINE', 'Dans Catégorie', 'Produits sponsorisés mélangés aux résultats', 1500, 1),
+  ('CATEGORY_BOTTOM', 'CATEGORY_BOTTOM', 'Bas de Catégorie', 'Produits recommandés sponsorisés', 1000, 1),
+  ('PRODUCT_SIMILAR', 'PRODUCT_SIMILAR', 'Similaires Sponsorisés', 'Produits similaires sponsorisés sur la fiche produit', 2000, 1),
+  ('PRODUCT_SELLER', 'PRODUCT_SELLER', 'Vendeur Sponsorisé', 'Autres produits sponsorisés du vendeur', 1500, 1),
+  ('PRODUCT_RECOMMENDED', 'PRODUCT_RECOMMENDED', 'Recommandés', 'Produits recommandés sponsorisés', 2000, 1),
+  ('SHOP_TOP', 'SHOP_TOP', 'Boutique Sponsorisée', 'Boutique sponsorisée en haut de page', 3000, 0),
+  ('SHOP_PRODUCTS', 'SHOP_PRODUCTS', 'Produits Boutique', 'Produits sponsorisés dans la boutique', 1500, 1),
+  ('MOBILE_FEED', 'MOBILE_FEED', 'Fil Mobile', 'Produits sponsorisés dans le flux mobile', 1500, 1),
+  ('MOBILE_CAROUSEL', 'MOBILE_CAROUSEL', 'Carrousel Mobile', 'Carrousel sponsorisé mobile', 2000, 1),
+  ('MOBILE_BANNER', 'MOBILE_BANNER', 'Bannière Mobile', 'Bannière premium mobile', 2500, 0);

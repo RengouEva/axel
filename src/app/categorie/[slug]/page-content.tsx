@@ -12,6 +12,7 @@ import { AnimatedDiv } from "@/lib/animations"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
 import Link from "next/link"
+import AdContainer from "@/components/ads/ad-container"
 
 export default function CategoryPageContent({ products, category }: { products: Product[]; category: Category }) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -42,6 +43,8 @@ export default function CategoryPageContent({ products, category }: { products: 
           </div>
         </AnimatedDiv>
 
+        <AdContainer slot="CATEGORY_TOP" variant="banner" className="mb-6" />
+
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 p-4 rounded-2xl bg-[var(--bg-secondary)]">
           <div className="relative w-full sm:w-64">
             <Input icon={<Search className="w-4 h-4" />} placeholder="Rechercher dans cette catégorie..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-[var(--bg-primary)] text-sm" />
@@ -51,6 +54,8 @@ export default function CategoryPageContent({ products, category }: { products: 
             <button onClick={() => setViewMode("list")} className={`p-2 ${viewMode === "list" ? "bg-[var(--text-link)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"}`}><List className="w-4 h-4" /></button>
           </div>
         </div>
+
+        <AdContainer slot="CATEGORY_BOTTOM" category={category.name} variant="card" limit={4} title="Produits sponsorisés" className="mb-6" />
 
         {filtered.length === 0 ? (
           <div className="text-center py-20">

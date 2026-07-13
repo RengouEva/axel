@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react"
 import {
   LayoutDashboard, Store, Package, Gem, Zap, Truck, Menu, ChevronRight,
-  LogOut, Shield
+  LogOut, Shield, Megaphone
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { usePathname } from "next/navigation"
@@ -15,6 +15,7 @@ const navItems = [
   { icon: Package, label: "Produits", href: "/vendeur/produits" },
   { icon: Gem, label: "Abonnement", href: "/vendeur/abonnement" },
   { icon: Zap, label: "Boost", href: "/vendeur/boost" },
+  { icon: Megaphone, label: "Campagnes", href: "/vendeur/campagnes" },
   { icon: Truck, label: "Livraison", href: "/vendeur/livraison" },
 ]
 

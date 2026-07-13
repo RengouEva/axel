@@ -5,7 +5,7 @@ import toast from "react-hot-toast"
 import {
   LayoutDashboard, Users, Store, Package, Grid3X3, ShoppingCart, Wallet,
   CreditCard, DollarSign, BookOpen, BarChart3, FileText, Activity,
-  Menu, Shield, LogOut, ChevronRight, Percent, Gem
+  Menu, Shield, LogOut, ChevronRight, Percent, Gem, Megaphone
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { usePathname } from "next/navigation"
@@ -30,6 +30,14 @@ const navItems = [
     { icon: CreditCard, label: "Crédits", href: "/admin/credits" },
     { icon: BookOpen, label: "Comptabilité", href: "/admin/comptabilite" },
     { icon: Percent, label: "Taxes", href: "/admin/taxes" },
+  ]},
+  { section: "Publicité", items: [
+    { icon: Megaphone, label: "Tableau de bord", href: "/admin/publicite" },
+    { icon: Megaphone, label: "Campagnes", href: "/admin/publicite/campagnes" },
+    { icon: LayoutDashboard, label: "Emplacements", href: "/admin/publicite/emplacements" },
+    { icon: DollarSign, label: "Tarifs", href: "/admin/publicite/tarifs" },
+    { icon: DollarSign, label: "Revenus", href: "/admin/publicite/revenus" },
+    { icon: Activity, label: "Signalées", href: "/admin/publicite/signalees" },
   ]},
   { section: "Analyse", items: [
     { icon: BarChart3, label: "Statistiques", href: "/admin/stats" },

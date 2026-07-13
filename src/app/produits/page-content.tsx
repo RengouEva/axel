@@ -13,6 +13,7 @@ import { useFavorites } from "@/lib/favorites-context"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useCart } from "@/lib/cart-context"
 import Link from "next/link"
+import AdContainer from "@/components/ads/ad-container"
 
 const ITEMS_PER_PAGE = 6
 
@@ -186,6 +187,8 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
               </div>
             </div>
 
+            <AdContainer slot="SEARCH_TOP" variant="banner" className="mb-6" />
+
             {filtered.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-[var(--text-secondary)] text-lg">Aucun produit trouvé</p>
@@ -233,6 +236,7 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
                   ))}
                 </div>
 
+                <AdContainer slot="SEARCH_BOTTOM" variant="card" limit={3} title="Suggestions sponsorisées" className="mt-8" />
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-10">
                     <button
@@ -267,6 +271,7 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
               </>
             ) : (
               <div className="space-y-4">
+                <AdContainer slot="SEARCH_INLINE" variant="card" limit={2} title="Sponsorisé" className="mb-4" />
                 {paginated.map((product, index) => (
                   <AnimatedDiv key={product.id} fade slideUp delay={index * 0.03} className="flex gap-4 p-4 rounded-2xl border-2 border-[var(--border)] hover:shadow-axel-lg transition-all relative">
                     {product.boosted && (

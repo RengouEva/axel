@@ -18,6 +18,7 @@ import { useCart } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
 import { ProductDetailSkeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
+import AdContainer from "@/components/ads/ad-container"
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description")
@@ -240,6 +241,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </div>
           )}
         </div>
+
+        <AdContainer slot="PRODUCT_SIMILAR" category={product.category} variant="carousel" limit={6} className="mb-8" title="Similaires sponsorisés" />
+        <AdContainer slot="PRODUCT_RECOMMENDED" variant="carousel" limit={6} title="Recommandés" />
       </div>
     </div>
   )
