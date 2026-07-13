@@ -1,7 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useState, useCallback } from "react"
-import toast from "react-hot-toast"
+import { useEffect, useState } from "react"
 import { Users, ShoppingCart, DollarSign, Package, CreditCard, Mail, TrendingUp, Clock, Store } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
@@ -18,21 +17,15 @@ export default function AdminDashboard() {
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/stats", { headers: getAuthHeaders() })
-      if (!res.ok) throw new Error("Erreur de chargement")
-      const d = await res.json()
-      setStats(d.stats)
-      setRecentOrders(d.recentOrders || [])
-    } catch {
-      toast.error("Erreur lors du chargement des statistiques")
-    } finally {
-      setLoading(false)
-    }
+  useEffect(() => {
+    let cancelled = false
+    fetch("/api/admin/stats", { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(d => { if (!cancelled) { setStats(d.stats); setRecentOrders(d.recentOrders || []) } })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [getAuthHeaders])
-
-  useEffect(() => { fetchStats() }, [fetchStats])
 
   if (loading || !stats) return <div className="flex items-center justify-center h-64"><LoadingSpinner size="lg" /></div>
 
