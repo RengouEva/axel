@@ -17,13 +17,12 @@ export function LoadingSpinner({ size = "md", className, text }: LoadingSpinnerP
         className="relative flex items-center justify-center"
         style={{ width: 56 * scale, height: 56 * scale }}
       >
-        <span
-          className="font-extrabold text-[var(--text-primary)] select-none"
-          style={{ fontSize: `${11 * scale}px`, letterSpacing: "0.08em" }}
-        >
-          AXEL
-        </span>
-        {/* rotating ring of dots */}
+        <img
+          src="/images/logo-axel.png"
+          alt="AXEL"
+          className="select-none pointer-events-none"
+          style={{ height: 20 * scale, width: "auto" }}
+        />
         <div
           className="absolute inset-0 animate-[axel-spin_1.6s_linear_infinite]"
           style={{ animationDuration: `${1.6 / scale}s` }}
