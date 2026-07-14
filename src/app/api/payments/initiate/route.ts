@@ -57,6 +57,15 @@ export async function POST(request: Request) {
 
     if (isDemo) {
       await execute("UPDATE `Transaction` SET status = 'completed' WHERE id = ?", [transaction.id])
+      if (transaction.type === 'boost') {
+        const meta = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : (transaction.metadata || {})
+        if (meta.productId) {
+          await execute(
+            "UPDATE ProductBoost SET status = 'active' WHERE productId = ? AND shopId = ? AND status = 'pending'",
+            [meta.productId, transaction.shopId]
+          )
+        }
+      }
       return NextResponse.json({
         success: true,
         demo: true,
