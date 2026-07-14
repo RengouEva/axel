@@ -20,7 +20,7 @@ export default function PromotionsPageContent({ products }: { products: Product[
           <p className="text-[var(--text-secondary)]">Profitez de nos meilleures offres avant la fin des stocks</p>
         </AnimatedDiv>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {products.map((product, i) => (
             <AnimatedDiv key={product.id} fade slideUp delay={i * 0.05} className="group bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
               <Link href={`/produit/${product.slug}`} className="relative aspect-square bg-[var(--bg-secondary)] overflow-hidden block">

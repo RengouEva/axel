@@ -203,7 +203,7 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
               </div>
             ) : viewMode === "grid" ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
                   {paginated.map((product, index) => (
                     <AnimatedDiv key={product.id} fade slideUp delay={index * 0.03} className="group bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
                       <Link href={`/produit/${product.slug}`} className="relative aspect-square bg-[var(--bg-secondary)] overflow-hidden block">

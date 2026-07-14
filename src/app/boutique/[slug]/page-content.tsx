@@ -70,7 +70,7 @@ export default function BoutiquePageContent({
             {products.length === 0 ? (
               <p className="text-[var(--text-secondary)]">Aucun produit dans cette boutique pour le moment.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4">
                 {products.map((product) => (
                   <Link key={product.id} href={`/produit/${product.slug}`}
                     className="group rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-1 overflow-hidden">
