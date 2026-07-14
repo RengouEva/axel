@@ -1,31 +1,46 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Megaphone, Plus, Trash2 } from "lucide-react"
+import { Megaphone, Plus, Trash2, Loader2, Package } from "lucide-react"
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { PromoCode, FlashSale, ProductPack, BogoOffer } from "@/lib/services-pro-types"
+
+function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="text-center py-12">
+      <Icon className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]" />
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{title}</h3>
+      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+    </div>
+  )
+}
 
 export default function MarketingPage() {
   const { getAuthHeaders } = useAuth()
   const [tab, setTab] = useState("promo")
-  const [promoCodes, setPromoCodes] = useState<any[]>([])
-  const [flashSales, setFlashSales] = useState<any[]>([])
-  const [packs, setPacks] = useState<any[]>([])
-  const [bogo, setBogo] = useState<any[]>([])
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([])
+  const [flashSales, setFlashSales] = useState<FlashSale[]>([])
+  const [packs, setPacks] = useState<ProductPack[]>([])
+  const [bogo, setBogo] = useState<BogoOffer[]>([])
+  const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
-    const [p, f, pk, b] = await Promise.all([
-      fetch("/api/vendeur/services-pro/marketing/promo-codes", { headers: getAuthHeaders() }).then(r => r.json()),
-      fetch("/api/vendeur/services-pro/marketing/flash-sales", { headers: getAuthHeaders() }).then(r => r.json()),
-      fetch("/api/vendeur/services-pro/marketing/packs", { headers: getAuthHeaders() }).then(r => r.json()),
-      fetch("/api/vendeur/services-pro/marketing/bogo", { headers: getAuthHeaders() }).then(r => r.json()),
-    ])
-    setPromoCodes(p.codes || [])
-    setFlashSales(f.flashSales || [])
-    setPacks(pk.packs || [])
-    setBogo(b.offers || [])
+    setLoading(true)
+    try {
+      const [p, f, pk, b] = await Promise.all([
+        fetch("/api/vendeur/services-pro/marketing/promo-codes", { headers: getAuthHeaders() }).then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); return { codes: [] } }; return r.json() }) as Promise<{ codes: PromoCode[] }>,
+        fetch("/api/vendeur/services-pro/marketing/flash-sales", { headers: getAuthHeaders() }).then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); return { flashSales: [] } }; return r.json() }) as Promise<{ flashSales: FlashSale[] }>,
+        fetch("/api/vendeur/services-pro/marketing/packs", { headers: getAuthHeaders() }).then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); return { packs: [] } }; return r.json() }) as Promise<{ packs: ProductPack[] }>,
+        fetch("/api/vendeur/services-pro/marketing/bogo", { headers: getAuthHeaders() }).then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); return { offers: [] } }; return r.json() }) as Promise<{ offers: BogoOffer[] }>,
+      ])
+      setPromoCodes(p.codes || [])
+      setFlashSales(f.flashSales || [])
+      setPacks(pk.packs || [])
+      setBogo(b.offers || [])
+    } catch { toast.error("Une erreur est survenue") } finally { setLoading(false) }
   }
 
   useEffect(() => { loadData() }, [])
@@ -43,6 +58,8 @@ export default function MarketingPage() {
     { id: "packs", label: "Packs produits" },
     { id: "bogo", label: "Offres BOGO" },
   ]
+
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)] p-6">
@@ -71,7 +88,7 @@ export default function MarketingPage() {
   )
 }
 
-function PromoCodeSection({ codes, onDelete }: { codes: any[]; onDelete: (id: string) => void }) {
+function PromoCodeSection({ codes, onDelete }: { codes: PromoCode[]; onDelete: (id: string) => void }) {
   const { getAuthHeaders } = useAuth()
   const [form, setForm] = useState({ code: "", discountType: "percentage", discountValue: "", minPurchase: "0", maxUses: "0", startDate: "", endDate: "" })
 
@@ -104,7 +121,7 @@ function PromoCodeSection({ codes, onDelete }: { codes: any[]; onDelete: (id: st
       <Button onClick={create}><Plus className="w-4 h-4" /> Créer le code</Button>
 
       <div className="space-y-2 mt-4">
-        {codes.map((c: any) => (
+        {codes.map((c: PromoCode) => (
           <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)] text-sm">
             <div>
               <span className="font-semibold text-[var(--text-primary)]">{c.code}</span>
@@ -118,7 +135,7 @@ function PromoCodeSection({ codes, onDelete }: { codes: any[]; onDelete: (id: st
   )
 }
 
-function FlashSaleSection({ sales, onToggle, getAuthHeaders }: { sales: any[]; onToggle: () => void; getAuthHeaders: () => Record<string, string> }) {
+function FlashSaleSection({ sales, onToggle, getAuthHeaders }: { sales: FlashSale[]; onToggle: () => void; getAuthHeaders: () => Record<string, string> }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", discountPercent: 10, startDate: "", endDate: "" })
 
@@ -157,7 +174,7 @@ function FlashSaleSection({ sales, onToggle, getAuthHeaders }: { sales: any[]; o
         </div>
       )}
 
-      {sales.map((s: any) => (
+      {sales.map((s: FlashSale) => (
         <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)] text-sm">
           <div>
             <span className="font-semibold text-[var(--text-primary)]">{s.name}</span>
@@ -169,12 +186,12 @@ function FlashSaleSection({ sales, onToggle, getAuthHeaders }: { sales: any[]; o
           </button>
         </div>
       ))}
-      {sales.length === 0 && !showForm && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucune vente flash</p>}
+      {sales.length === 0 && !showForm && <EmptyState icon={Megaphone} title="Aucune vente flash" description="Il n'y a aucune vente flash pour le moment." />}
     </div>
   )
 }
 
-function PacksSection({ packs, onDelete, getAuthHeaders, onUpdate }: { packs: any[]; onDelete: (id: string) => void; getAuthHeaders: () => Record<string, string>; onUpdate: () => void }) {
+function PacksSection({ packs, onDelete, getAuthHeaders, onUpdate }: { packs: ProductPack[]; onDelete: (id: string) => void; getAuthHeaders: () => Record<string, string>; onUpdate: () => void }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", products: "[]", packPrice: "", originalPrice: "", stock: "0" })
 
@@ -211,7 +228,7 @@ function PacksSection({ packs, onDelete, getAuthHeaders, onUpdate }: { packs: an
         </div>
       )}
 
-      {packs.map((p: any) => (
+      {packs.map((p: ProductPack) => (
         <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)] text-sm">
           <div>
             <span className="font-semibold text-[var(--text-primary)]">{p.name}</span>
@@ -220,12 +237,12 @@ function PacksSection({ packs, onDelete, getAuthHeaders, onUpdate }: { packs: an
           <button onClick={() => onDelete(p.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
         </div>
       ))}
-      {packs.length === 0 && !showForm && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucun pack</p>}
+      {packs.length === 0 && !showForm && <EmptyState icon={Package} title="Aucun pack" description="Il n'y a aucun pack produit pour le moment." />}
     </div>
   )
 }
 
-function BogoSection({ offers, onDelete, getAuthHeaders, onUpdate }: { offers: any[]; onDelete: (id: string) => void; getAuthHeaders: () => Record<string, string>; onUpdate: () => void }) {
+function BogoSection({ offers, onDelete, getAuthHeaders, onUpdate }: { offers: BogoOffer[]; onDelete: (id: string) => void; getAuthHeaders: () => Record<string, string>; onUpdate: () => void }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", buyQuantity: 1, getQuantity: 1, discountPercent: 0, startDate: "", endDate: "" })
 
@@ -274,7 +291,7 @@ function BogoSection({ offers, onDelete, getAuthHeaders, onUpdate }: { offers: a
         </div>
       )}
 
-      {offers.map((o: any) => (
+      {offers.map((o: BogoOffer) => (
         <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)] text-sm">
           <div>
             <span className="font-semibold text-[var(--text-primary)]">{o.name}</span>
@@ -283,7 +300,7 @@ function BogoSection({ offers, onDelete, getAuthHeaders, onUpdate }: { offers: a
           <button onClick={() => onDelete(o.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
         </div>
       ))}
-      {offers.length === 0 && !showForm && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucune offre BOGO</p>}
+      {offers.length === 0 && !showForm && <EmptyState icon={Megaphone} title="Aucune offre BOGO" description="Il n'y a aucune offre BOGO pour le moment." />}
     </div>
   )
 }

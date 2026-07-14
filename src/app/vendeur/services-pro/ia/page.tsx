@@ -1,21 +1,32 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Brain, Lightbulb, TrendingUp, Sparkles, Check, X } from "lucide-react"
+import { useState, useEffect, type ComponentType } from "react"
+import { Brain, Lightbulb, TrendingUp, Sparkles, Check, X, Loader2 } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { AiRecommendation } from "@/lib/services-pro-types"
+
+function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="text-center py-12">
+      <Icon className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]" />
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{title}</h3>
+      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+    </div>
+  )
+}
 
 export default function AiPage() {
   const { getAuthHeaders } = useAuth()
-  const [recommendations, setRecommendations] = useState<any[]>([])
+  const [recommendations, setRecommendations] = useState<AiRecommendation[]>([])
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
   const [filter, setFilter] = useState<string | undefined>(undefined)
 
   const loadRecs = async () => {
     const url = filter ? `/api/vendeur/services-pro/ai?type=${filter}` : "/api/vendeur/services-pro/ai"
-    const res = await fetch(url, { headers: getAuthHeaders() }).then(r => r.json())
+    const res: { recommendations?: AiRecommendation[] } = await fetch(url, { headers: getAuthHeaders() }).then(r => r.json())
     setRecommendations(res.recommendations || [])
     setLoading(false)
   }
@@ -55,12 +66,12 @@ export default function AiPage() {
     price: "Prix", optimization: "Optimisation", publishing: "Publication",
     sales_forecast: "Prévisions", detection: "Détection",
   }
-  const typeIcons: Record<string, any> = {
+  const typeIcons: Record<string, ComponentType<{ className?: string }>> = {
     price: TrendingUp, optimization: Sparkles, publishing: Lightbulb,
     sales_forecast: TrendingUp, detection: Brain,
   }
 
-  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><p className="text-[var(--text-secondary)]">Chargement...</p></div>
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)] p-6">
@@ -88,7 +99,7 @@ export default function AiPage() {
         </div>
 
         <div className="space-y-4">
-          {recommendations.map((rec: any) => {
+          {recommendations.map((rec: AiRecommendation) => {
             const Icon = typeIcons[rec.type] || Brain
             const color = typeColors[rec.type] || "#64748B"
             return (
@@ -122,11 +133,7 @@ export default function AiPage() {
             )
           })}
           {recommendations.length === 0 && (
-            <div className="text-center py-12">
-              <Brain className="w-12 h-12 text-[var(--text-secondary)]/50 mx-auto mb-4" />
-              <p className="text-[var(--text-secondary)]">Aucune recommandation pour le moment</p>
-              <p className="text-sm text-[var(--text-muted)]">Lancez une analyse pour obtenir des suggestions</p>
-            </div>
+            <EmptyState icon={Brain} title="Aucune recommandation" description="Lancez une analyse pour obtenir des suggestions personnalisées." />
           )}
         </div>
       </div>

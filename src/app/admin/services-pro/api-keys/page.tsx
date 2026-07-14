@@ -71,8 +71,8 @@ export default function AdminApiKeysPage() {
         </div>
       ) : (
         <>
-          <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] overflow-hidden">
-            <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[var(--bg-primary)] border-b border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)]">
+          <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] overflow-x-auto">
+            <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[var(--bg-primary)] border-b border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)] sticky top-0 z-10">
               <div className="col-span-2">Boutique</div>
               <div className="col-span-2">Nom</div>
               <div className="col-span-2">Préfixe</div>

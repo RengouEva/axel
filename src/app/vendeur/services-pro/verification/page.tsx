@@ -1,22 +1,28 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ShieldCheck, Upload, CheckCircle, XCircle, Clock } from "lucide-react"
+import { ShieldCheck, Upload, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { SellerVerification } from "@/lib/services-pro-types"
+
+interface VerificationResponse {
+  verification: SellerVerification | null
+}
 
 export default function VerificationPage() {
   const { getAuthHeaders } = useAuth()
-  const [verification, setVerification] = useState<any>(null)
+  const [verification, setVerification] = useState<SellerVerification | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ verificationType: "individual", idType: "CNI", idNumber: "", businessRegNumber: "", taxId: "" })
 
   useEffect(() => {
-    fetch("/api/vendeur/services-pro/verification", { headers: getAuthHeaders() }).then(r => r.json())
-      .then(d => { setVerification(d.verification); setLoading(false) })
-      .catch(() => setLoading(false))
+    fetch("/api/vendeur/services-pro/verification", { headers: getAuthHeaders() })
+      .then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); setLoading(false); return }; return r.json() })
+      .then(d => { if (d) { setVerification(d.verification); setLoading(false) } })
+      .catch(() => { toast.error("Une erreur est survenue"); setLoading(false) })
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,13 +34,13 @@ export default function VerificationPage() {
         body: JSON.stringify(form),
       })
       const data = await res.json()
-      if (!res.ok) { toast.error(data.error); return }
+      if (!res.ok) { toast.error(data.error || "Une erreur est survenue"); return }
       setVerification(data.verification)
-      toast.success(data.message)
-    } catch { toast.error("Erreur lors de l'envoi") } finally { setSubmitting(false) }
+      toast.success(data.message || "Demande envoyée")
+    } catch { toast.error("Une erreur est survenue") } finally { setSubmitting(false) }
   }
 
-  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><p className="text-[var(--text-secondary)]">Chargement...</p></div>
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)] p-6">

@@ -1,36 +1,63 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ShoppingCart, FileText, RotateCcw, Search } from "lucide-react"
+import { ShoppingCart, FileText, RotateCcw, Search, Loader2, Package } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { ReturnRequest } from "@/lib/services-pro-types"
+
+interface Order {
+  id: string
+  customerName: string
+  createdAt: string
+  status: string
+  total: number
+}
+
+interface OrdersResponse {
+  orders: Order[]
+}
+
+interface ReturnsResponse {
+  returns: ReturnRequest[]
+}
 
 const statusLabels: Record<string, string> = {
   pending: "En attente", processing: "En cours", shipped: "Expédié",
   delivered: "Livré", cancelled: "Annulé",
 }
 
+function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="text-center py-12">
+      <Icon className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]" />
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{title}</h3>
+      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+    </div>
+  )
+}
+
 export default function OrdersPage() {
   const { getAuthHeaders } = useAuth()
-  const [orders, setOrders] = useState<any[]>([])
-  const [returns, setReturns] = useState<any[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [returns, setReturns] = useState<ReturnRequest[]>([])
   const [tab, setTab] = useState("orders")
   const [loading, setLoading] = useState(true)
   const [orderSearch, setOrderSearch] = useState("")
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/vendeur/services-pro/orders/returns", { headers: getAuthHeaders() }).then(r => r.json()),
-      fetch("/api/vendeur/services-pro/orders", { headers: getAuthHeaders() }).then(r => r.json()),
+      fetch("/api/vendeur/services-pro/orders/returns", { headers: getAuthHeaders() }).then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); return {} }; return r.json() }),
+      fetch("/api/vendeur/services-pro/orders", { headers: getAuthHeaders() }).then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); return {} }; return r.json() }),
     ]).then(([retData, ordData]) => {
       setReturns(retData.returns || [])
       setOrders(ordData.orders || [])
       setLoading(false)
-    }).catch(() => setLoading(false))
+    }).catch(() => { toast.error("Une erreur est survenue"); setLoading(false) })
   }, [])
 
-  const handleReturnAction = async (id: string, status: string, refundAmount?: number) => {
+  const handleReturnAction = async (id: string, status: ReturnRequest["status"], refundAmount?: number) => {
     try {
       const res = await fetch("/api/vendeur/services-pro/orders/returns", {
         method: "PUT", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
@@ -50,7 +77,7 @@ export default function OrdersPage() {
     }
   }
 
-  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><p className="text-[var(--text-secondary)]">Chargement...</p></div>
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)] p-6">
@@ -78,7 +105,7 @@ export default function OrdersPage() {
             <Search className="w-5 h-5 text-[var(--text-secondary)]" />
           </div>
           <div className="space-y-3">
-            {orders.filter((o: any) => !orderSearch || o.id.includes(orderSearch)).slice(0, 20).map((order: any) => (
+            {orders.filter((o: Order) => !orderSearch || o.id.includes(orderSearch)).slice(0, 20).map((order: Order) => (
               <div key={order.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)]">
                 <div>
                   <p className="font-semibold text-sm text-[var(--text-primary)]">{order.id}</p>
@@ -91,7 +118,7 @@ export default function OrdersPage() {
                 </div>
               </div>
             ))}
-            {orders.length === 0 && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucune commande</p>}
+            {orders.length === 0 && <EmptyState icon={ShoppingCart} title="Aucune commande" description="Il n'y a aucune commande à afficher pour le moment." />}
           </div>
         </div>
       )}
@@ -99,7 +126,7 @@ export default function OrdersPage() {
       {tab === "returns" && (
         <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-6">
           <div className="space-y-3">
-            {returns.map((ret: any) => (
+            {returns.map((ret: ReturnRequest) => (
               <div key={ret.id} className="p-4 rounded-xl bg-[var(--bg-secondary)]">
                 <div className="flex items-center justify-between mb-2">
                   <div>
@@ -122,7 +149,7 @@ export default function OrdersPage() {
                 )}
               </div>
             ))}
-            {returns.length === 0 && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucune demande de retour</p>}
+            {returns.length === 0 && <EmptyState icon={RotateCcw} title="Aucun retour" description="Il n'y a aucune demande de retour pour le moment." />}
           </div>
         </div>
       )}

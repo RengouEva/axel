@@ -5,12 +5,18 @@ import { Package, Upload, Copy, Bell, Calendar, GitBranch, Download } from "luci
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { ProductVariant, ProductVariantGroup, ScheduledPublish, StockAlert } from "@/lib/services-pro-types"
+
+interface ProductsResponse {
+  products: ProductVariant[]
+  variants: ProductVariant[]
+}
 
 export default function ProductsPage() {
   const { getAuthHeaders } = useAuth()
   const [tab, setTab] = useState("import")
   const [importData, setImportData] = useState("")
-  const [variants, setVariants] = useState<any[]>([])
+  const [variants, setVariants] = useState<ProductVariant[]>([])
   const [productId, setProductId] = useState("")
   const [variantForm, setVariantForm] = useState({ name: "", value: "", sku: "", price: "", stock: "0" })
   const [scheduleDate, setScheduleDate] = useState("")
@@ -152,7 +158,7 @@ export default function ProductsPage() {
             <button onClick={loadVariants} className="text-sm text-[var(--text-link)]">Charger les variantes</button>
             {variants.length > 0 && (
               <div className="space-y-2">
-                {variants.map((v: any) => (
+                {variants.map((v: ProductVariant) => (
                   <div key={v.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)] text-sm">
                     <span className="text-[var(--text-primary)]">{v.name}: {v.value}</span>
                     <span className="text-[var(--text-secondary)]">Stock: {v.stock}</span>

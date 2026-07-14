@@ -1,18 +1,29 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Lock, Smartphone, Users, History, Shield, Save, AlertTriangle } from "lucide-react"
+import { Lock, Smartphone, Users, History, Shield, Save, AlertTriangle, Loader2, UserX } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { SellerSecurity, TeamMember, ActionLog, LoginLog } from "@/lib/services-pro-types"
+
+function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="text-center py-12">
+      <Icon className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]" />
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{title}</h3>
+      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+    </div>
+  )
+}
 
 export default function SecurityPage() {
   const { getAuthHeaders } = useAuth()
   const [tab, setTab] = useState("settings")
-  const [security, setSecurity] = useState<any>(null)
-  const [team, setTeam] = useState<any[]>([])
-  const [actionLogs, setActionLogs] = useState<any[]>([])
-  const [loginLogs, setLoginLogs] = useState<any[]>([])
+  const [security, setSecurity] = useState<SellerSecurity | null>(null)
+  const [team, setTeam] = useState<TeamMember[]>([])
+  const [actionLogs, setActionLogs] = useState<ActionLog[]>([])
+  const [loginLogs, setLoginLogs] = useState<LoginLog[]>([])
   const [loading, setLoading] = useState(true)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [sessionTimeout, setSessionTimeout] = useState("60")
@@ -91,7 +102,7 @@ export default function SecurityPage() {
     { id: "logs", label: "Journal", icon: History },
   ]
 
-  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><p className="text-[var(--text-secondary)]">Chargement...</p></div>
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)] p-6">
@@ -180,7 +191,7 @@ export default function SecurityPage() {
             <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-6">
               <h2 className="font-bold text-[var(--text-primary)] mb-4">Membres de l'équipe</h2>
               <div className="space-y-3">
-                {team.map((m: any) => (
+                {team.map((m: TeamMember) => (
                   <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)]">
                     <div>
                       <p className="font-semibold text-sm text-[var(--text-primary)]">{m.userName}</p>
@@ -189,7 +200,7 @@ export default function SecurityPage() {
                     <button onClick={() => removeMember(m.id)} className="text-red-400 hover:text-red-300 text-xs">Retirer</button>
                   </div>
                 ))}
-                {team.length === 0 && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucun membre</p>}
+                {team.length === 0 && <EmptyState icon={UserX} title="Aucun membre" description="Il n'y a aucun membre dans l'équipe pour le moment." />}
               </div>
             </div>
           </div>
@@ -200,20 +211,20 @@ export default function SecurityPage() {
             <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-6">
               <h2 className="font-bold text-[var(--text-primary)] mb-4">Journal des actions</h2>
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {actionLogs.map((log: any) => (
+                {actionLogs.map((log: ActionLog) => (
                   <div key={log.id} className="flex items-center justify-between p-2 rounded-lg bg-[var(--bg-secondary)] text-xs">
                     <span className="text-[var(--text-primary)]">{log.action}</span>
                     <span className="text-[var(--text-secondary)]">{log.userName} • {new Date(log.createdAt).toLocaleString("fr-FR")}</span>
                   </div>
                 ))}
-                {actionLogs.length === 0 && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucune action</p>}
+                {actionLogs.length === 0 && <EmptyState icon={History} title="Aucune action" description="Il n'y a aucune action enregistrée pour le moment." />}
               </div>
             </div>
 
             <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-6">
               <h2 className="font-bold text-[var(--text-primary)] mb-4">Journal des connexions</h2>
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {loginLogs.map((log: any) => (
+                {loginLogs.map((log: LoginLog) => (
                   <div key={log.id} className="flex items-center justify-between p-2 rounded-lg bg-[var(--bg-secondary)] text-xs">
                     <div className="flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${log.success ? 'bg-green-400' : 'bg-red-400'}`} />
@@ -222,7 +233,7 @@ export default function SecurityPage() {
                     <span className="text-[var(--text-secondary)]">{log.device || log.userAgent?.substring(0, 30) || "Inconnu"} • {new Date(log.createdAt).toLocaleString("fr-FR")}</span>
                   </div>
                 ))}
-                {loginLogs.length === 0 && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucune connexion</p>}
+                {loginLogs.length === 0 && <EmptyState icon={Lock} title="Aucune connexion" description="Il n'y a aucune connexion enregistrée pour le moment." />}
               </div>
             </div>
           </div>

@@ -111,10 +111,10 @@ export default function AdminSecuritePage() {
         </div>
       ) : (
         <>
-          <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] overflow-hidden">
+          <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] overflow-x-auto">
             {tab === "login" ? (
               <>
-                <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[var(--bg-primary)] border-b border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)]">
+                <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[var(--bg-primary)] border-b border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)] sticky top-0 z-10">
                   <div className="col-span-2">Utilisateur</div>
                   <div className="col-span-2">Email</div>
                   <div className="col-span-2">IP</div>
@@ -143,7 +143,7 @@ export default function AdminSecuritePage() {
               </>
             ) : (
               <>
-                <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[var(--bg-primary)] border-b border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)]">
+                <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[var(--bg-primary)] border-b border-[var(--border)] text-xs font-semibold text-[var(--text-secondary)] sticky top-0 z-10">
                   <div className="col-span-2">Utilisateur</div>
                   <div className="col-span-2">Boutique</div>
                   <div className="col-span-2">Action</div>

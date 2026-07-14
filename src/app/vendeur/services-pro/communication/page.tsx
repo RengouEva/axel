@@ -1,31 +1,46 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MessageSquare, Send, Plus, Trash2 } from "lucide-react"
+import { MessageSquare, Send, Plus, Trash2, Loader2, Inbox } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { SellerMessage, MessageTemplate, AutoReply, SellerMessageReply } from "@/lib/services-pro-types"
+
+function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="text-center py-12">
+      <Icon className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]" />
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{title}</h3>
+      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+    </div>
+  )
+}
 
 export default function CommunicationPage() {
   const { getAuthHeaders } = useAuth()
   const [tab, setTab] = useState("messages")
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<SellerMessage[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const [templates, setTemplates] = useState<any[]>([])
-  const [autoReplies, setAutoReplies] = useState<any[]>([])
+  const [templates, setTemplates] = useState<MessageTemplate[]>([])
+  const [autoReplies, setAutoReplies] = useState<AutoReply[]>([])
   const [replyText, setReplyText] = useState("")
   const [selectedMsg, setSelectedMsg] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const loadData = async () => {
-    const [msgData, tmplData, autoData] = await Promise.all([
-      fetch("/api/vendeur/services-pro/messaging", { headers: getAuthHeaders() }).then(r => r.json()),
-      fetch("/api/vendeur/services-pro/messaging/templates", { headers: getAuthHeaders() }).then(r => r.json()),
-      fetch("/api/vendeur/services-pro/messaging/auto-replies", { headers: getAuthHeaders() }).then(r => r.json()),
-    ])
-    setMessages(msgData.messages || [])
-    setUnreadCount(msgData.unreadCount || 0)
-    setTemplates(tmplData.templates || [])
-    setAutoReplies(autoData.autoReplies || [])
+    setLoading(true)
+    try {
+      const [msgData, tmplData, autoData] = await Promise.all([
+        fetch("/api/vendeur/services-pro/messaging", { headers: getAuthHeaders() }).then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); return { messages: [], unreadCount: 0 } }; return r.json() }) as Promise<{ messages: SellerMessage[]; unreadCount: number }>,
+        fetch("/api/vendeur/services-pro/messaging/templates", { headers: getAuthHeaders() }).then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); return { templates: [] } }; return r.json() }) as Promise<{ templates: MessageTemplate[] }>,
+        fetch("/api/vendeur/services-pro/messaging/auto-replies", { headers: getAuthHeaders() }).then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); return { autoReplies: [] } }; return r.json() }) as Promise<{ autoReplies: AutoReply[] }>,
+      ])
+      setMessages(msgData.messages || [])
+      setUnreadCount(msgData.unreadCount || 0)
+      setTemplates(tmplData.templates || [])
+      setAutoReplies(autoData.autoReplies || [])
+    } catch { toast.error("Une erreur est survenue") } finally { setLoading(false) }
   }
 
   useEffect(() => { loadData() }, [])
@@ -47,6 +62,8 @@ export default function CommunicationPage() {
     { id: "auto", label: "Réponses auto" },
   ]
 
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
+
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)] p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -67,14 +84,14 @@ export default function CommunicationPage() {
       <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-6">
         {tab === "messages" && (
           <div className="space-y-3">
-            {messages.map((msg: any) => (
+            {messages.map((msg: SellerMessage) => (
               <div key={msg.id} className={`p-4 rounded-xl bg-[var(--bg-secondary)] ${msg.isRead ? "" : "border-l-4 border-[var(--text-link)]"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-semibold text-sm text-[var(--text-primary)]">{msg.subject}</p>
                   <span className="text-xs text-[var(--text-secondary)]">{new Date(msg.createdAt).toLocaleDateString("fr-FR")}</span>
                 </div>
                 <p className="text-sm text-[var(--text-secondary)] mb-2">{msg.userName} - {msg.message.substring(0, 100)}...</p>
-                {msg.replies?.map((r: any) => (
+                {msg.replies?.map((r: SellerMessageReply) => (
                   <p key={r.id} className="text-xs text-[var(--text-muted)] ml-4">→ {r.message.substring(0, 80)}...</p>
                 ))}
                 <div className="flex gap-2 mt-2">
@@ -87,7 +104,7 @@ export default function CommunicationPage() {
                 </div>
               </div>
             ))}
-            {messages.length === 0 && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucun message</p>}
+            {messages.length === 0 && <EmptyState icon={Inbox} title="Aucun message" description="Il n'y a aucun message à afficher pour le moment." />}
           </div>
         )}
 
@@ -98,7 +115,7 @@ export default function CommunicationPage() {
   )
 }
 
-function TemplatesSection({ templates, onUpdate }: { templates: any[]; onUpdate: () => void }) {
+function TemplatesSection({ templates, onUpdate }: { templates: MessageTemplate[]; onUpdate: () => void }) {
   const { getAuthHeaders } = useAuth()
   const [form, setForm] = useState({ name: "", subject: "", body: "", category: "general" })
   const create = async () => {
@@ -111,7 +128,7 @@ function TemplatesSection({ templates, onUpdate }: { templates: any[]; onUpdate:
   }
   return (
     <div className="space-y-4">
-      {templates.map((t: any) => (
+      {templates.map((t: MessageTemplate) => (
         <div key={t.id} className="p-3 rounded-xl bg-[var(--bg-secondary)] text-sm">
           <p className="font-semibold text-[var(--text-primary)]">{t.name}</p>
           <p className="text-xs text-[var(--text-secondary)]">{t.subject}</p>
@@ -127,7 +144,7 @@ function TemplatesSection({ templates, onUpdate }: { templates: any[]; onUpdate:
   )
 }
 
-function AutoRepliesSection({ autoReplies, onUpdate }: { autoReplies: any[]; onUpdate: () => void }) {
+function AutoRepliesSection({ autoReplies, onUpdate }: { autoReplies: AutoReply[]; onUpdate: () => void }) {
   const { getAuthHeaders } = useAuth()
   const [form, setForm] = useState({ keyword: "", replyMessage: "", matchType: "contains" })
   const create = async () => {
@@ -140,7 +157,7 @@ function AutoRepliesSection({ autoReplies, onUpdate }: { autoReplies: any[]; onU
   }
   return (
     <div className="space-y-4">
-      {autoReplies.map((a: any) => (
+      {autoReplies.map((a: AutoReply) => (
         <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)] text-sm">
           <span className="text-[var(--text-primary)] font-semibold">{a.keyword}</span>
           <span className="text-[var(--text-secondary)] text-xs">{a.replyMessage.substring(0, 60)}...</span>

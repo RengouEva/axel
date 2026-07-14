@@ -1,22 +1,36 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Key, Plus, Trash2, Copy, Eye, EyeOff } from "lucide-react"
+import { Key, Plus, Trash2, Copy, Eye, EyeOff, Loader2 } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { ApiKey } from "@/lib/services-pro-types"
+
+function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="text-center py-12">
+      <Icon className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]" />
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{title}</h3>
+      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+    </div>
+  )
+}
 
 export default function ApiPage() {
   const { getAuthHeaders } = useAuth()
-  const [keys, setKeys] = useState<any[]>([])
+  const [keys, setKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
   const [newKey, setNewKey] = useState<{ rawKey: string; name: string } | null>(null)
   const [form, setForm] = useState({ name: "", permissions: ["products:read"] as string[], rateLimit: "100" })
 
   const loadKeys = async () => {
-    const res = await fetch("/api/vendeur/services-pro/api-keys", { headers: getAuthHeaders() }).then(r => r.json())
-    setKeys(res.keys || [])
-    setLoading(false)
+    try {
+      const res = await fetch("/api/vendeur/services-pro/api-keys", { headers: getAuthHeaders() })
+      if (!res.ok) { const err = await res.json(); toast.error(err.error || "Une erreur est survenue"); setKeys([]); return }
+      const data: { keys?: ApiKey[] } = await res.json()
+      setKeys(data.keys || [])
+    } catch { toast.error("Une erreur est survenue"); setKeys([]) } finally { setLoading(false) }
   }
 
   useEffect(() => { loadKeys() }, [])
@@ -46,7 +60,7 @@ export default function ApiPage() {
 
   const allPermissions = ["products:read", "products:write", "orders:read", "orders:write", "shop:read", "shop:write", "marketing:read", "marketing:write", "reports:read"]
 
-  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><p className="text-[var(--text-secondary)]">Chargement...</p></div>
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)] p-6">
@@ -93,7 +107,7 @@ export default function ApiPage() {
         <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-6">
           <h2 className="font-bold text-[var(--text-primary)] mb-4">Clés existantes</h2>
           <div className="space-y-3">
-            {keys.map((k: any) => (
+            {keys.map((k: ApiKey) => (
               <div key={k.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)]">
                 <div>
                   <p className="font-semibold text-sm text-[var(--text-primary)]">{k.name}</p>
@@ -103,7 +117,7 @@ export default function ApiPage() {
                 <button onClick={() => deleteKey(k.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
               </div>
             ))}
-            {keys.length === 0 && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucune clé API</p>}
+            {keys.length === 0 && <EmptyState icon={Key} title="Aucune clé API" description="Il n'y a aucune clé API pour le moment." />}
           </div>
         </div>
       </div>

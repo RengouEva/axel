@@ -1,29 +1,46 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Store, Save } from "lucide-react"
+import { Store, Save, Loader2 } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { ShopSettings } from "@/lib/services-pro-types"
+
+interface ShopBranding {
+  name: string
+  description: string
+  phone: string
+  email: string
+  logo: string
+  coverImage: string
+}
+
+interface ShopBrandingResponse {
+  shop: ShopBranding | null
+  settings: ShopSettings
+}
 
 export default function ShopPage() {
   const { getAuthHeaders } = useAuth()
-  const [shop, setShop] = useState<any>(null)
-  const [settings, setSettings] = useState<any>({})
+  const [shop, setShop] = useState<ShopBranding | null>(null)
+  const [settings, setSettings] = useState<ShopSettings>({} as ShopSettings)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ name: "", description: "", phone: "", email: "", logo: "", coverImage: "" })
   const [hours, setHours] = useState<Record<string, { open: string; close: string }>>({})
 
   useEffect(() => {
-    fetch("/api/vendeur/services-pro/shop/branding", { headers: getAuthHeaders() }).then(r => r.json())
-      .then(d => {
+    fetch("/api/vendeur/services-pro/shop/branding", { headers: getAuthHeaders() })
+      .then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); setLoading(false); return }; return r.json() })
+      .then((d: ShopBrandingResponse | undefined) => {
+        if (!d) return
         setShop(d.shop)
-        setSettings(d.settings || {})
+        setSettings(d.settings || {} as ShopSettings)
         if (d.shop) setForm({ name: d.shop.name || "", description: d.shop.description || "", phone: d.shop.phone || "", email: d.shop.email || "", logo: d.shop.logo || "", coverImage: d.shop.coverImage || "" })
         if (d.settings?.hours) setHours(d.settings.hours)
         setLoading(false)
-      }).catch(() => setLoading(false))
+      }).catch(() => { toast.error("Une erreur est survenue"); setLoading(false) })
   }, [])
 
   const handleSave = async () => {
@@ -47,7 +64,7 @@ export default function ShopPage() {
   const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
   const dayKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
-  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><p className="text-[var(--text-secondary)]">Chargement...</p></div>
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)] p-6">
@@ -105,12 +122,12 @@ export default function ShopPage() {
           <h2 className="font-bold text-[var(--text-primary)] pt-4">Politiques</h2>
           <div>
             <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Politique de livraison</label>
-            <textarea value={settings.deliveryPolicy || ""} onChange={e => setSettings((s: any) => ({ ...s, deliveryPolicy: e.target.value }))}
+            <textarea value={settings.deliveryPolicy || ""} onChange={e => setSettings(s => ({ ...s, deliveryPolicy: e.target.value }))}
               className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)]" rows={3} />
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Politique de retour</label>
-            <textarea value={settings.returnPolicy || ""} onChange={e => setSettings((s: any) => ({ ...s, returnPolicy: e.target.value }))}
+            <textarea value={settings.returnPolicy || ""} onChange={e => setSettings(s => ({ ...s, returnPolicy: e.target.value }))}
               className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-primary)]" rows={3} />
           </div>
 

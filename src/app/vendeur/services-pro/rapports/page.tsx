@@ -1,14 +1,25 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { BarChart3, FileDown, Calendar, FileText } from "lucide-react"
+import { BarChart3, FileDown, Calendar, FileText, Loader2 } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { SellerReport } from "@/lib/services-pro-types"
+
+function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="text-center py-12">
+      <Icon className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]" />
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{title}</h3>
+      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+    </div>
+  )
+}
 
 export default function ReportsPage() {
   const { getAuthHeaders } = useAuth()
-  const [reports, setReports] = useState<any[]>([])
+  const [reports, setReports] = useState<SellerReport[]>([])
   const [loading, setLoading] = useState(true)
   const [type, setType] = useState<string | undefined>(undefined)
 
@@ -17,9 +28,11 @@ export default function ReportsPage() {
     const url = type ? `/api/vendeur/services-pro/reports?type=${type}` : "/api/vendeur/services-pro/reports"
     try {
       const res = await fetch(url, { headers: getAuthHeaders() })
-      const data = await res.json()
+      if (!res.ok) { const err = await res.json(); toast.error(err.error || "Une erreur est survenue"); setReports([]); return }
+      const data: { reports?: SellerReport[] } = await res.json()
       setReports(data.reports || [])
     } catch {
+      toast.error("Une erreur est survenue")
       setReports([])
     } finally {
       setLoading(false)
@@ -39,7 +52,7 @@ export default function ReportsPage() {
     loadReports()
   }
 
-  const exportReport = (report: any) => {
+  const exportReport = (report: SellerReport) => {
     const blob = new Blob([JSON.stringify(report.data || report, null, 2)], { type: "application/json" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -54,7 +67,7 @@ export default function ReportsPage() {
     daily: "Quotidien", weekly: "Hebdomadaire", monthly: "Mensuel", yearly: "Annuel",
   }
 
-  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><p className="text-[var(--text-secondary)]">Chargement...</p></div>
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)] p-6">
@@ -88,7 +101,7 @@ export default function ReportsPage() {
 
       <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-6">
         <div className="space-y-3">
-          {reports.map((r: any) => (
+          {reports.map((r: SellerReport) => (
             <div key={r.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--bg-secondary)]">
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-[var(--text-link)]" />
@@ -102,7 +115,7 @@ export default function ReportsPage() {
               </button>
             </div>
           ))}
-          {reports.length === 0 && <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucun rapport généré</p>}
+          {reports.length === 0 && <EmptyState icon={FileText} title="Aucun rapport" description="Il n'y a aucun rapport généré pour le moment." />}
         </div>
       </div>
     </div>

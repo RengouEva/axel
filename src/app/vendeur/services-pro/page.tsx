@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ShieldCheck, LayoutDashboard, Package, ShoppingCart, Store, Megaphone, MessageSquare, BarChart3, Key, Brain, Bell, Lock, ArrowRight } from "lucide-react"
+import { ShieldCheck, LayoutDashboard, Package, ShoppingCart, Store, Megaphone, MessageSquare, BarChart3, Key, Brain, Bell, Lock, ArrowRight, Loader2 } from "lucide-react"
+import toast from "react-hot-toast"
 import Link from "next/link"
 
 const modules = [
@@ -24,8 +25,13 @@ export default function ServicesProPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/vendeur/services-pro").then(r => r.json()).then(d => { setStats(d); setLoading(false) }).catch(() => setLoading(false))
+    fetch("/api/vendeur/services-pro")
+      .then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); setLoading(false); return }; return r.json() })
+      .then(d => { if (d) { setStats(d); setLoading(false) } })
+      .catch(() => { toast.error("Une erreur est survenue"); setLoading(false) })
   }, [])
+
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   return (
     <div className="w-full min-h-screen bg-[var(--bg-secondary)]">

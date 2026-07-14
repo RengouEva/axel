@@ -1,24 +1,44 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { DollarSign, ShoppingCart, Users, TrendingUp, Eye, ArrowUp, ArrowDown } from "lucide-react"
+import { DollarSign, ShoppingCart, Users, TrendingUp, Eye, ArrowUp, ArrowDown, Loader2, BarChart3 } from "lucide-react"
 import { AnimatedDiv } from "@/lib/animations"
 import { useAuth } from "@/lib/auth-context"
+import toast from "react-hot-toast"
+import type { DashboardStats } from "@/lib/services-pro-types"
+
+interface SellerStats {
+  totalProducts: number
+  activeListings: number
+  averageRating: number
+  verifiedBadge: boolean
+}
+
+function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="text-center py-12">
+      <Icon className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)]" />
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{title}</h3>
+      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const { getAuthHeaders } = useAuth()
-  const [stats, setStats] = useState<any>(null)
-  const [sellerStats, setSellerStats] = useState<any>(null)
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [sellerStats, setSellerStats] = useState<SellerStats | null>(null)
   const [period, setPeriod] = useState("30d")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/vendeur/services-pro/dashboard?period=${period}`, { headers: getAuthHeaders() }).then(r => r.json())
-      .then(d => { setStats(d.stats); setSellerStats(d.sellerStats); setLoading(false) })
-      .catch(() => setLoading(false))
+    fetch(`/api/vendeur/services-pro/dashboard?period=${period}`, { headers: getAuthHeaders() })
+      .then(async r => { if (!r.ok) { const err = await r.json(); toast.error(err.error || "Une erreur est survenue"); setLoading(false); return }; return r.json() })
+      .then(d => { if (d) { setStats(d.stats); setSellerStats(d.sellerStats); setLoading(false) } })
+      .catch(() => { toast.error("Une erreur est survenue"); setLoading(false) })
   }, [period])
 
-  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><p className="text-[var(--text-secondary)]">Chargement...</p></div>
+  if (loading) return <div className="w-full min-h-screen bg-[var(--bg-secondary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} /></div>
 
   const cards = [
     { icon: DollarSign, label: "Chiffre d'affaires", value: `${stats?.revenue?.total?.toLocaleString("fr-FR") || 0} F`, change: stats?.revenue?.change, color: "#1769F2" },
@@ -97,7 +117,7 @@ export default function DashboardPage() {
         <AnimatedDiv fade slideUp className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-5">
           <h2 className="font-bold text-[var(--text-primary)] mb-4">Produits les plus consultés</h2>
           <div className="space-y-2">
-            {(stats?.topProducts || []).slice(0, 5).map((p: any, i: number) => (
+            {(stats?.topProducts || []).slice(0, 5).map((p, i: number) => (
               <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)]">
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold text-[var(--text-secondary)] w-5">{i + 1}</span>
@@ -110,7 +130,7 @@ export default function DashboardPage() {
               </div>
             ))}
             {(!stats?.topProducts || stats.topProducts.length === 0) && (
-              <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucune donnée</p>
+              <EmptyState icon={Eye} title="Aucune donnée" description="Il n'y a aucun produit consulté pour le moment." />
             )}
           </div>
         </AnimatedDiv>
@@ -118,7 +138,7 @@ export default function DashboardPage() {
         <AnimatedDiv fade slideUp delay={0.05} className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-5">
           <h2 className="font-bold text-[var(--text-primary)] mb-4">Produits les plus vendus</h2>
           <div className="space-y-2">
-            {(stats?.topSelling || []).slice(0, 5).map((p: any, i: number) => (
+            {(stats?.topSelling || []).slice(0, 5).map((p, i: number) => (
               <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-secondary)]">
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold text-[var(--text-secondary)] w-5">{i + 1}</span>
@@ -131,7 +151,7 @@ export default function DashboardPage() {
               </div>
             ))}
             {(!stats?.topSelling || stats.topSelling.length === 0) && (
-              <p className="text-sm text-[var(--text-secondary)] text-center py-4">Aucune donnée</p>
+              <EmptyState icon={ShoppingCart} title="Aucune donnée" description="Il n'y a aucun produit vendu pour le moment." />
             )}
           </div>
         </AnimatedDiv>
@@ -141,7 +161,7 @@ export default function DashboardPage() {
         <AnimatedDiv fade slideUp className="mt-6 bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-5">
           <h2 className="font-bold text-[var(--text-primary)] mb-4">Revenus par période</h2>
           <div className="grid grid-cols-7 gap-2">
-            {stats.revenueByPeriod.map((r: any) => (
+            {stats.revenueByPeriod.map((r) => (
               <div key={r.period} className="flex flex-col items-center p-2 rounded-lg bg-[var(--bg-secondary)]">
                 <span className="text-[10px] text-[var(--text-secondary)]">{new Date(r.period).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}</span>
                 <span className="text-xs font-semibold text-[var(--text-primary)] mt-1">{Number(r.amount).toLocaleString("fr-FR")} F</span>

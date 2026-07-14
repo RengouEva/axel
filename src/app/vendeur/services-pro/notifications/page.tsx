@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Bell, CheckCheck, Filter } from "lucide-react"
+import { Bell, CheckCheck, Filter, Loader2 } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
 import { useAuth } from "@/lib/auth-context"
+import type { SellerNotification } from "@/lib/services-pro-types"
 
 const TYPE_LABELS: Record<string, string> = {
   new_order: "Nouvelle commande",
@@ -30,7 +31,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function NotificationsPage() {
   const { getAuthHeaders } = useAuth()
-  const [notifications, setNotifications] = useState<any[]>([])
+  const [notifications, setNotifications] = useState<SellerNotification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -44,7 +45,7 @@ export default function NotificationsPage() {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) })
       if (typeFilter) params.set("type", typeFilter)
       const res = await fetch(`/api/vendeur/services-pro/notifications?${params}`, { headers: getAuthHeaders() })
-      const data = await res.json()
+      const data: { notifications?: SellerNotification[]; unreadCount?: number; total?: number; error?: string } = await res.json()
       if (!res.ok) { toast.error(data.error); return }
       setNotifications(data.notifications || [])
       setUnreadCount(data.unreadCount || 0)
@@ -100,13 +101,14 @@ export default function NotificationsPage() {
 
         <div className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)]">
           {loading ? (
-            <div className="p-12 text-center">
-              <p className="text-[var(--text-secondary)]">Chargement...</p>
+            <div className="p-12 text-center flex justify-center">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--text-link)" }} />
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-12 text-center">
-              <Bell className="w-12 h-12 text-[var(--text-secondary)]/50 mx-auto mb-4" />
-              <p className="text-[var(--text-secondary)]">Aucune notification</p>
+              <Bell className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">Aucune notification</h3>
+              <p className="text-sm text-[var(--text-secondary)]">Il n'y a aucune notification à afficher pour le moment.</p>
             </div>
           ) : (
             <>
@@ -117,7 +119,7 @@ export default function NotificationsPage() {
                 <div className="col-span-1">Lu</div>
                 <div className="col-span-2">Date</div>
               </div>
-              {notifications.map((n: any) => (
+              {notifications.map((n: SellerNotification) => (
                 <div key={n.id} className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[var(--border)] last:border-0 items-center hover:bg-[var(--bg-secondary)]/50 transition-colors">
                   <div className="col-span-2">
                     <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${TYPE_COLORS[n.type] || TYPE_COLORS.system}`}>
