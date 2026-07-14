@@ -52,12 +52,14 @@ export default function CreateCampaignPage() {
     if (!user) return
     Promise.all([
       fetch("/api/shops", { headers: getAuthHeaders() }).then(r => r.json()),
-      fetch(`/api/products?sellerId=${user.id}`, { headers: getAuthHeaders() }).then(r => r.json()),
+      fetch(`/api/products?sellerId=${user.id}&organic=false`, { headers: getAuthHeaders() }).then(r => r.json()),
     ]).then(([shopsData, productsData]) => {
-      setShops(shopsData.shops || shopsData || [])
-      setProducts(productsData.products || productsData || [])
-      if (shopsData.shops?.length > 0) {
-        setForm(prev => ({ ...prev, shopId: shopsData.shops[0].id }))
+      const shopsList = Array.isArray(shopsData) ? shopsData : (shopsData.shops || [])
+      const productsList = Array.isArray(productsData) ? productsData : (productsData.products || [])
+      setShops(shopsList)
+      setProducts(productsList)
+      if (shopsList.length > 0) {
+        setForm(prev => ({ ...prev, shopId: shopsList[0].id }))
       }
     }).finally(() => setLoading(false))
   }, [user, getAuthHeaders])

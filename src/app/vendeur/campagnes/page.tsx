@@ -30,7 +30,7 @@ export default function CampaignsPage() {
       const res = await fetch(`/api/ads?${params}`, { headers: getAuthHeaders() })
       if (res.ok) {
         const data = await res.json()
-        setCampaigns(data.campaigns || [])
+        setCampaigns(Array.isArray(data) ? data : (data.campaigns || []))
       }
     } catch {}
     setLoading(false)

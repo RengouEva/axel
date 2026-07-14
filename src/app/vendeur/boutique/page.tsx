@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Store, MapPin, Phone, Mail, Pencil, X, Save, AlertTriangle, CheckCircle, Loader2, Plus, Trash2, Search, Package, ImagePlus, Upload, Zap, TrendingUp } from "lucide-react"
+import { Store, MapPin, Phone, Mail, Pencil, X, Save, AlertTriangle, CheckCircle, Loader2, Plus, Trash2, Search, Package, ImagePlus, Upload, Zap, TrendingUp, Lightbulb, Sparkles } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import type { Country, City, District } from "@/data/delivery"
 import type { Category } from "@/data/categories"
@@ -92,6 +92,8 @@ export default function SellerBoutiquePage() {
   const [boostLoading, setBoostLoading] = useState(false)
   const [boostModal, setBoostModal] = useState<{ productId: number; productName: string } | null>(null)
   const [boostDuration, setBoostDuration] = useState(7)
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
 
   useEffect(() => {
     fetch("/api/categories").then(r => r.json()).then(data => setCategories(data.categories || []))
@@ -124,9 +126,9 @@ export default function SellerBoutiquePage() {
 
   const fetchProducts = useCallback(async (shopId: string) => {
     try {
-      const res = await fetch(`/api/products?shopId=${shopId}`)
+      const res = await fetch(`/api/products?shopId=${shopId}&organic=false`)
       const data = await res.json()
-      setProducts(data.products || [])
+      setProducts(Array.isArray(data) ? data : (data.products || []))
     } catch {
       console.error("Erreur chargement produits")
     }
@@ -142,9 +144,24 @@ export default function SellerBoutiquePage() {
     } catch { /* ignore */ }
   }, [getAuthHeaders])
 
+  const fetchSuggestions = useCallback(async (shopId: string) => {
+    setSuggestionsLoading(true)
+    try {
+      const res = await fetch(`/api/ads/boost-suggestions?shopId=${shopId}`, { headers: getAuthHeaders() })
+      if (res.ok) {
+        const data = await res.json()
+        setSuggestions(data.suggestions || [])
+      }
+    } catch { /* ignore */ }
+    setSuggestionsLoading(false)
+  }, [getAuthHeaders])
+
   useEffect(() => {
-    if (shop) fetchBoosts(shop.id)
-  }, [shop, fetchBoosts])
+    if (shop) {
+      fetchBoosts(shop.id)
+      fetchSuggestions(shop.id)
+    }
+  }, [shop, fetchBoosts, fetchSuggestions])
 
   useEffect(() => {
     fetchShop()
@@ -778,6 +795,45 @@ export default function SellerBoutiquePage() {
                     </p>
                     <p className="text-xs text-[var(--text-secondary)]">Le boost augmente la visibilité de vos produits dans les résultats de recherche.</p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {suggestions.length > 0 && (
+              <div className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/5 to-teal-500/5 border-2 border-emerald-500/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <Lightbulb className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <p className="text-sm font-bold text-[var(--text-primary)]">Suggestions de boost</p>
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                </div>
+                <div className="space-y-2">
+                  {suggestions.map((s: any) => (
+                    <div key={s.productId} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/50 hover:bg-white/80 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-[var(--bg-secondary)] overflow-hidden shrink-0">
+                        <img src={s.productImage || "/images/visuel.png"} alt={s.productName} className="w-full h-full object-contain" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{s.productName}</p>
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {s.reasons.slice(0, 2).map((r: string, i: number) => (
+                            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium leading-tight">
+                              {r}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-right">
+                          <p className="text-xs font-bold text-emerald-600">{s.score}</p>
+                          <p className="text-[10px] text-[var(--text-secondary)]">score</p>
+                        </div>
+                        <button onClick={() => setBoostModal({ productId: s.productId, productName: s.productName })}
+                          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-amber-500 text-white text-xs font-semibold hover:brightness-110 transition-all">
+                          Booster
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
