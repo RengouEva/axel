@@ -106,7 +106,7 @@ export default function AiPage() {
               <div key={rec.id} className="bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] p-5">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}15` }}>
-                    <Icon className="w-5 h-5" style={{ color }} />
+                    <span style={{ color }}><Icon className="w-5 h-5" /></span>
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">

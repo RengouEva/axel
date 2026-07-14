@@ -93,7 +93,7 @@ export default function ApiPage() {
               {allPermissions.map(p => (
                 <label key={p} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] cursor-pointer">
                   <input type="checkbox" checked={form.permissions.includes(p)} onChange={e => {
-                    setForm(f => ({ ...f, permissions: e.target.checked ? [...f.permissions, p] : f.permissions.filter(x => x !== p) })
+                    setForm(f => ({ ...f, permissions: e.target.checked ? [...f.permissions, p] : f.permissions.filter(x => x !== p) }))
                   }} className="accent-[var(--text-link)]" />
                   {p}
                 </label>

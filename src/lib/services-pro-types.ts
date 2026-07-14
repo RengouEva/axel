@@ -58,6 +58,8 @@ export interface ReturnRequest {
   productId: number
   shopId: string
   userId: number
+  productName?: string
+  userName?: string
   reason: string
   status: 'pending' | 'approved' | 'rejected' | 'picked_up' | 'received' | 'refunded' | 'cancelled'
   refundAmount?: number
@@ -262,6 +264,7 @@ export interface ActionLog {
   id: number
   shopId?: string
   userId: number
+  userName?: string
   action: string
   entityType?: string
   entityId?: string

@@ -46,7 +46,7 @@ export default function NotificationsPage() {
       if (typeFilter) params.set("type", typeFilter)
       const res = await fetch(`/api/vendeur/services-pro/notifications?${params}`, { headers: getAuthHeaders() })
       const data: { notifications?: SellerNotification[]; unreadCount?: number; total?: number; error?: string } = await res.json()
-      if (!res.ok) { toast.error(data.error); return }
+      if (!res.ok) { toast.error(data.error || "Une erreur est survenue"); return }
       setNotifications(data.notifications || [])
       setUnreadCount(data.unreadCount || 0)
       setTotal(data.total || 0)
