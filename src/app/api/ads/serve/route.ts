@@ -113,14 +113,14 @@ export async function GET(request: Request) {
     }))
 
     if (formatted.length > 0) {
-      const insertValues = formatted.map((a: any) =>
-        `('${a.id}', '${placement.id}', NULL, '${sessionId}', '${ip}', '', 0, 1, NOW())`
-      ).join(",")
       try {
         const { execute } = await import("@/lib/db")
         const costPerAd = placement.auctionEnabled ? 1 : 0
+        const placeholders = formatted.map(() => "(?, ?, NULL, ?, ?, '', 0, 1, NOW())").join(",")
+        const flatParams = formatted.flatMap(a => [a.id, placement.id, sessionId, ip])
         await execute(
-          `INSERT INTO AdImpression (campaignId, placementId, userId, sessionId, ip, userAgent, cost, weighted, createdAt) VALUES ${insertValues}`
+          `INSERT INTO AdImpression (campaignId, placementId, userId, sessionId, ip, userAgent, cost, weighted, createdAt) VALUES ${placeholders}`,
+          flatParams
         )
         for (const a of formatted) {
           await execute(

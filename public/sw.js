@@ -1,49 +1,56 @@
-const CACHE_NAME = "axel-marketplace-v2"
-
-const urlsToCache = [
-  "/",
-  "/produits",
-  "/panier",
-  "/comparateur",
-  "/faq",
-  "/contact",
-  "/a-propos",
-  "/cgu",
-  "/confidentialite",
-  "/manifest.json",
-  "/images/logo-favicon.png",
-  "/icons/logo-192.png",
-  "/icons/logo-512.png",
-]
+const CACHE_NAME = "axel-marketplace-v3"
+const STATIC_CACHE = "axel-static-v3"
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache)
-    })
-  )
-})
-
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) return response
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== "basic") return response
-        const clone = response.clone()
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-        return response
-      })
-    })
-  )
+  self.skipWaiting()
 })
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((names) =>
-      Promise.all(names.map((name) => {
-        if (name !== CACHE_NAME) return caches.delete(name)
-      }))
+      Promise.all(
+        names.map((name) => {
+          if (name !== CACHE_NAME && name !== STATIC_CACHE) return caches.delete(name)
+        })
+      )
+    ).then(() => self.clients.claim())
+  )
+})
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event
+  const url = new URL(request.url)
+
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/images/")) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request).then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone()
+            caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone))
+          }
+          return response
+        }).catch(() => cached)
+        return cached || fetchPromise
+      })
     )
+    return
+  }
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (response && response.status === 200) {
+          const clone = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+        }
+        return response
+      }).catch(() => caches.match(request))
+    )
+    return
+  }
+
+  event.respondWith(
+    caches.match(request).then((cached) => cached || fetch(request))
   )
 })

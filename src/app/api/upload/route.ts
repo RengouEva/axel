@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server"
 import { writeFile, mkdir } from "fs/promises"
 import path from "path"
+import { checkApiRateLimit } from "@/lib/rate-limit"
 
-const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"]
+const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp"]
 const MAX_SIZE = 5 * 1024 * 1024
 
 export async function POST(request: Request) {
+  const ip = request.headers.get("x-forwarded-for") || "unknown"
+  const rateLimit = checkApiRateLimit(`upload:${ip}`)
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Trop de requêtes" }, { status: 429 })
+  }
+
   try {
     const formData = await request.formData()
     const file = formData.get("file") as File | null
