@@ -3,6 +3,7 @@
 import { ShoppingCart, Star, Eye, Zap, Store, Heart } from "lucide-react"
 import Button from "@/components/ui/button"
 import Badge from "@/components/ui/badge"
+import StarRating from "@/components/ui/star-rating"
 import { AnimatedDiv } from "@/lib/animations"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
@@ -18,6 +19,12 @@ interface Product {
   shop?: { id: string; name: string; slug: string; logo: string; category: string; badges?: { type: string; label: string; color: string; icon?: string }[] }
   badges?: { type: string; label: string; color: string; icon?: string }[]
   boosted?: boolean
+}
+
+const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect fill='%23f1f5f9' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' fill='%2394a3b8' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3EAXEL%3C/text%3E%3C/svg%3E"
+
+function imgError(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.src = PLACEHOLDER_IMG
 }
 
 export default function ProductGridContent({ products }: { products: Product[] }) {
@@ -42,7 +49,7 @@ export default function ProductGridContent({ products }: { products: Product[] }
           </div>
         </AnimatedDiv>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {products.map((product, index) => {
             const isFav = isFavorite(product.id)
 
@@ -62,6 +69,7 @@ export default function ProductGridContent({ products }: { products: Product[] }
                     alt={product.name}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
                     loading="lazy"
+                    onError={imgError}
                   />
                   <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1.5 sm:gap-2">
                     {product.promotion && (
@@ -117,10 +125,8 @@ export default function ProductGridContent({ products }: { products: Product[] }
                     </h3>
                   </Link>
 
-                  <div className="flex items-center gap-1 mb-2 sm:mb-3">
-                    <Star className="w-3.5 sm:w-4 h-3.5 sm:h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">{product.rating}</span>
-                    <span className="text-[10px] sm:text-xs text-[var(--text-secondary)]">({product.reviews})</span>
+                  <div className="mb-2 sm:mb-3">
+                    <StarRating rating={product.rating} size="sm" reviews={product.reviews} />
                   </div>
 
                   <div className="mb-3 sm:mb-4">

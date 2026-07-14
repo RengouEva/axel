@@ -2,6 +2,7 @@
 
 import { Trash2, Plus, Star, ShoppingCart, X } from "lucide-react"
 import Button from "@/components/ui/button"
+import StarRating from "@/components/ui/star-rating"
 import { AnimatedDiv } from "@/lib/animations"
 import { hasCreditRates } from "@/data/product-types"
 import { useCompare } from "@/lib/compare-context"
@@ -54,9 +55,9 @@ export default function ComparePage() {
                       </div>
                       <p className="text-xs text-[var(--text-link)] font-semibold">{p.brand}</p>
                       <h3 className="font-semibold text-[var(--text-primary)] text-sm">{p.name}</h3>
-                      <div className="flex items-center justify-center gap-1 mt-1">
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs font-semibold">{p.rating}</span>
+                      <div className="flex items-center justify-center mt-1">
+                        <StarRating rating={p.rating} size="xs" showValue={false} />
+                        <span className="text-xs font-semibold text-[var(--text-primary)] ml-1">{p.rating}</span>
                       </div>
                     </div>
                   </th>

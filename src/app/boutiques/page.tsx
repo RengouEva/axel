@@ -134,11 +134,11 @@ function BoutiqueCard({ shop, index, countries, cities }: { shop: Shop; index: n
               <Store className="w-10 h-10 text-[var(--text-link)]" />
             </div>
           </div>
-          <div className="absolute top-3 right-3">
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/20 text-white text-[11px] font-semibold backdrop-blur-sm">
-              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-              {shop.rating}
-            </span>
+          <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-sm px-2 py-1">
+            {[1, 2, 3, 4, 5].map(i => (
+              <Star key={i} className={`w-3 h-3 ${i <= Math.round(shop.rating) ? "fill-yellow-400 text-yellow-400" : "text-white/40"}`} />
+            ))}
+            <span className="text-white text-[11px] font-semibold ml-0.5">{shop.rating}</span>
           </div>
         </div>
 

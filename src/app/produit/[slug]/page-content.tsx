@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import Button from "@/components/ui/button"
 import Badge from "@/components/ui/badge"
+import StarRating from "@/components/ui/star-rating"
 import ProductGallery from "@/components/product/product-gallery"
 import CreditSimulator from "@/components/product/credit-simulator"
 import ProductReviews from "@/components/product/product-reviews"
@@ -84,6 +85,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   {product.name}
                 </h1>
                 <p className="text-[var(--text-secondary)]">{product.brand}</p>
+                <div className="flex items-center gap-2">
+                  <StarRating rating={product.rating} size="sm" reviews={product.reviews} />
+                </div>
                 {product.shop && (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <Link href={`/boutique/${product.shop.slug}`} className="inline-flex items-center gap-1.5 text-xs text-[var(--text-link)] font-medium hover:underline">

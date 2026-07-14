@@ -190,7 +190,12 @@ export default function SearchBar({ className }: { className?: string }) {
                     {shop.category && <p className="text-[11px] text-[var(--text-muted)]">{shop.category}</p>}
                   </div>
                   {shop.rating > 0 && (
-                    <span className="text-[11px] text-yellow-500 font-semibold shrink-0">★ {shop.rating}</span>
+                    <span className="flex items-center gap-0.5 shrink-0">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <span key={i} className={`text-[10px] ${i <= Math.round(shop.rating) ? "text-yellow-400" : "text-gray-300"}`}>★</span>
+                      ))}
+                      <span className="text-[11px] text-yellow-500 font-semibold ml-0.5">{shop.rating}</span>
+                    </span>
                   )}
                 </button>
               ))}

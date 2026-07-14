@@ -5,6 +5,7 @@ import { Search, Grid3X3, List, Heart } from "lucide-react"
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
 import Badge from "@/components/ui/badge"
+import StarRating from "@/components/ui/star-rating"
 import type { Product } from "@/data/product-types"
 import { hasCreditRates } from "@/data/product-types"
 import type { Category } from "@/data/categories"
@@ -13,6 +14,12 @@ import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
 import Link from "next/link"
 import AdContainer from "@/components/ads/ad-container"
+
+const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect fill='%23f1f5f9' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' fill='%2394a3b8' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3EAXEL%3C/text%3E%3C/svg%3E"
+
+function imgError(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.src = PLACEHOLDER_IMG
+}
 
 export default function CategoryPageContent({ products, category }: { products: Product[]; category: Category }) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -66,7 +73,7 @@ export default function CategoryPageContent({ products, category }: { products: 
             {filtered.map((product, index) => (
               <AnimatedDiv key={product.id} fade slideUp delay={index * 0.05} className="group bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
                 <Link href={`/produit/${product.slug}`} className="relative aspect-square bg-[var(--bg-secondary)] overflow-hidden block">
-                  <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" />
+                  <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" onError={imgError} />
                   <div className="absolute top-3 left-3 flex flex-col gap-2">
                     {product.promotion && <Badge variant="promo">Promo</Badge>}
                     {hasCreditRates(product.creditRates) && <Badge variant="credit">À crédit</Badge>}
@@ -75,7 +82,7 @@ export default function CategoryPageContent({ products, category }: { products: 
                 <div className="p-4">
                   <p className="text-xs text-[var(--text-link)] font-semibold">{product.brand}</p>
                   <Link href={`/produit/${product.slug}`}><h3 className="font-semibold text-[var(--text-primary)] text-sm line-clamp-1 hover:text-[var(--text-link)] transition-colors">{product.name}</h3></Link>
-                  <div className="flex items-center gap-1 my-1"><span className="text-yellow-400 text-xs">★</span><span className="text-xs font-semibold text-[var(--text-primary)]">{product.rating}</span></div>
+                  <div className="my-1"><StarRating rating={product.rating} size="xs" /></div>
                   <p className="text-lg font-bold text-[var(--text-primary)]">{product.price.toLocaleString("fr-FR")} F</p>
                   {hasCreditRates(product.creditRates) && <p className="text-xs text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</p>}
                   <div className="flex gap-2 mt-3">
@@ -92,7 +99,7 @@ export default function CategoryPageContent({ products, category }: { products: 
           <div className="space-y-4">
             {filtered.map((product, index) => (
               <AnimatedDiv key={product.id} fade slideUp delay={index * 0.03} className="flex gap-4 p-4 rounded-2xl border-2 border-[var(--border)] hover:shadow-axel-lg transition-all">
-                <Link href={`/produit/${product.slug}`} className="w-24 h-24 rounded-xl bg-[var(--bg-secondary)] overflow-hidden shrink-0"><img src={product.image} alt="" className="w-full h-full object-contain" /></Link>
+                <Link href={`/produit/${product.slug}`} className="w-24 h-24 rounded-xl bg-[var(--bg-secondary)] overflow-hidden shrink-0"><img src={product.image} alt="" className="w-full h-full object-contain" onError={imgError} /></Link>
                 <div className="flex-1">
                   <p className="text-xs text-[var(--text-link)] font-semibold">{product.brand}</p>
                   <Link href={`/produit/${product.slug}`}><h3 className="font-semibold text-[var(--text-primary)] hover:text-[var(--text-link)]">{product.name}</h3></Link>

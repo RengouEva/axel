@@ -5,6 +5,7 @@ import { Search, Grid3X3, List, ChevronLeft, ChevronRight, Star, Store, Heart } 
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
 import Badge from "@/components/ui/badge"
+import StarRating from "@/components/ui/star-rating"
 import type { Product } from "@/data/product-types"
 import { hasCreditRates } from "@/data/product-types"
 import type { Category } from "@/data/categories"
@@ -23,6 +24,12 @@ export default function ProductsPageContent({ products, categories }: { products
       <ProductsContent products={products} categories={categories} />
     </Suspense>
   )
+}
+
+const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect fill='%23f1f5f9' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' fill='%2394a3b8' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3EAXEL%3C/text%3E%3C/svg%3E"
+
+function imgError(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.src = PLACEHOLDER_IMG
 }
 
 function ProductsContent({ products, categories }: { products: Product[]; categories: Category[] }) {
@@ -196,11 +203,11 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
               </div>
             ) : viewMode === "grid" ? (
               <>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                   {paginated.map((product, index) => (
                     <AnimatedDiv key={product.id} fade slideUp delay={index * 0.03} className="group bg-[var(--bg-primary)] rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
                       <Link href={`/produit/${product.slug}`} className="relative aspect-square bg-[var(--bg-secondary)] overflow-hidden block">
-                        <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" />
+                        <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" onError={imgError} />
                         <div className="absolute top-3 left-3 flex flex-col gap-2">
                           {product.promotion && <Badge variant="promo">Promo</Badge>}
                           {hasCreditRates(product.creditRates) && <Badge variant="credit">À crédit</Badge>}
@@ -218,10 +225,8 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
                         <p className="text-xs text-[var(--text-link)] font-semibold">{product.brand}</p>
                         {product.shop && <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 flex-wrap"><Store className="w-3 h-3" />{product.shop.name}{product.shop.badges?.map(b => <span key={b.type} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-semibold leading-tight" style={{ backgroundColor: b.color + "20", color: b.color }}>{b.label}</span>)}</p>}
                         <Link href={`/produit/${product.slug}`}><h3 className="font-semibold text-[var(--text-primary)] text-sm line-clamp-1 hover:text-[var(--text-link)] transition-colors">{product.name}</h3></Link>
-                        <div className="flex items-center gap-1 my-2">
-                          <span className="text-yellow-400 text-xs">★</span>
-                          <span className="text-xs font-semibold text-[var(--text-primary)]">{product.rating}</span>
-                          <span className="text-xs text-[var(--text-secondary)]">({product.reviews})</span>
+                        <div className="my-2">
+                          <StarRating rating={product.rating} size="xs" reviews={product.reviews} />
                         </div>
                         <p className="text-xl font-bold text-[var(--text-primary)]">{product.price.toLocaleString("fr-FR")} F</p>
                         {hasCreditRates(product.creditRates) && <p className="text-xs text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</p>}
@@ -283,15 +288,14 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
                       </div>
                     )}
                     <Link href={`/produit/${product.slug}`} className="w-32 h-32 rounded-xl bg-[var(--bg-secondary)] overflow-hidden shrink-0">
-                      <img src={product.image} alt={product.name} className="w-full h-full object-contain" />
+                      <img src={product.image} alt={product.name} className="w-full h-full object-contain" onError={imgError} />
                     </Link>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-[var(--text-link)] font-semibold">{product.brand}</p>
                       {product.shop && <p className="text-xs text-[var(--text-muted)] flex items-center gap-1 flex-wrap"><Store className="w-3 h-3" />{product.shop.name}{product.shop.badges?.map(b => <span key={b.type} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-semibold leading-tight" style={{ backgroundColor: b.color + "20", color: b.color }}>{b.label}</span>)}</p>}
                       <Link href={`/produit/${product.slug}`}><h3 className="font-semibold text-[var(--text-primary)] hover:text-[var(--text-link)] transition-colors">{product.name}</h3></Link>
-                      <div className="flex items-center gap-1 my-1">
-                        <span className="text-yellow-400 text-xs">★</span>
-                        <span className="text-xs font-semibold text-[var(--text-primary)]">{product.rating}</span>
+                      <div className="my-1">
+                        <StarRating rating={product.rating} size="xs" />
                       </div>
                       <div className="flex items-center gap-3 mt-2">
                         <p className="text-xl font-bold text-[var(--text-primary)]">{product.price.toLocaleString("fr-FR")} F</p>

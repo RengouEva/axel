@@ -2,11 +2,18 @@
 
 import { Store, MapPin, Phone, Mail, Star, Package, Shield, ChevronDown } from "lucide-react"
 import Button from "@/components/ui/button"
+import StarRating from "@/components/ui/star-rating"
 import { useCart } from "@/lib/cart-context"
 import type { Product } from "@/data/product-types"
 import type { Shop } from "@/data/shops"
 import type { Country, City, District } from "@/data/delivery"
 import Link from "next/link"
+
+const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect fill='%23f1f5f9' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' fill='%2394a3b8' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3EAXEL%3C/text%3E%3C/svg%3E"
+
+function imgError(e: React.SyntheticEvent<HTMLImageElement>) {
+  e.currentTarget.src = PLACEHOLDER_IMG
+}
 
 export default function BoutiquePageContent({
   products, shop, countries, cities, districts
@@ -63,17 +70,18 @@ export default function BoutiquePageContent({
             {products.length === 0 ? (
               <p className="text-[var(--text-secondary)]">Aucun produit dans cette boutique pour le moment.</p>
             ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {products.map((product) => (
                   <Link key={product.id} href={`/produit/${product.slug}`}
                     className="group rounded-2xl border-2 border-[var(--border)] hover:border-transparent hover:shadow-axel-xl transition-all duration-500 hover:-translate-y-1 overflow-hidden">
                     <div className="aspect-square bg-[var(--bg-secondary)] flex items-center justify-center p-8">
-                      <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" />
+                      <img src={product.image} alt={product.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" onError={imgError} />
                     </div>
                     <div className="p-4">
                       <p className="text-xs text-[var(--text-link)] font-semibold">{product.brand}</p>
                       <h3 className="font-semibold text-[var(--text-primary)] text-sm">{product.name}</h3>
-                      <p className="text-lg font-bold text-[var(--text-primary)] mt-1">{product.price.toLocaleString("fr-FR")} F</p>
+                      <div className="my-1.5"><StarRating rating={product.rating} size="xs" /></div>
+                      <p className="text-lg font-bold text-[var(--text-primary)]">{product.price.toLocaleString("fr-FR")} F</p>
                       <Button size="sm" className="w-full mt-3" onClick={(e) => { e.preventDefault(); addItem(product) }}>
                         Ajouter au panier
                       </Button>
