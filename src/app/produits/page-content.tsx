@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense, useCallback } from "react"
-import { Search, Grid3X3, List, ChevronLeft, ChevronRight, Star, Store, Heart } from "lucide-react"
+import { Search, Grid3X3, List, ChevronLeft, ChevronRight, ChevronDown, Star, Store, Heart } from "lucide-react"
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
 import Badge from "@/components/ui/badge"
@@ -30,6 +30,45 @@ const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000
 
 function imgError(e: React.SyntheticEvent<HTMLImageElement>) {
   e.currentTarget.src = PLACEHOLDER_IMG
+}
+
+function MobileCategoryDropdown({ categories, selectedCategory, onSelect }: { categories: Category[]; selectedCategory: string; onSelect: (cat: string) => void }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="lg:hidden mb-4 relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--bg-primary)] text-sm font-medium text-[var(--text-primary)]"
+      >
+        <span>
+          {selectedCategory === "all"
+            ? "Toutes les catégories"
+            : categories.find(c => c.slug === selectedCategory)?.name || "Catégorie"}
+        </span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-[var(--bg-primary)] border-2 border-[var(--border)] rounded-xl shadow-2xl overflow-hidden">
+          <button
+            onClick={() => { onSelect("all"); setOpen(false) }}
+            className={`block w-full text-left px-4 py-3 text-sm transition-colors border-b border-[var(--border)] last:border-0 ${selectedCategory === "all" ? "bg-[var(--text-link)]/10 text-[var(--text-link)] font-semibold" : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"}`}
+          >
+            Toutes les catégories
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => { onSelect(cat.slug); setOpen(false) }}
+              className={`block w-full text-left px-4 py-3 text-sm transition-colors border-b border-[var(--border)] last:border-0 ${selectedCategory === cat.slug ? "bg-[var(--text-link)]/10 text-[var(--text-link)] font-semibold" : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"}`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function ProductsContent({ products, categories }: { products: Product[]; categories: Category[] }) {
@@ -134,7 +173,8 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
 
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="lg:w-64 shrink-0">
-            <div className="sticky top-24 space-y-6">
+            <MobileCategoryDropdown categories={categories} selectedCategory={selectedCategory} onSelect={handleCategoryChange} />
+            <div className="hidden lg:block sticky top-24 space-y-6">
               <div>
                 <h3 className="font-semibold text-[var(--text-primary)] mb-3 text-sm">Catégories</h3>
                 <div className="space-y-1">
@@ -278,7 +318,7 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
               <div className="space-y-4">
                 <AdContainer slot="SEARCH_INLINE" variant="card" limit={2} title="Sponsorisé" className="mb-4" />
                 {paginated.map((product, index) => (
-                  <AnimatedDiv key={product.id} fade slideUp delay={index * 0.03} className="flex gap-4 p-4 rounded-2xl border-2 border-[var(--border)] hover:shadow-axel-lg transition-all relative">
+                  <AnimatedDiv key={product.id} fade slideUp delay={index * 0.03} className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border-2 border-[var(--border)] hover:shadow-axel-lg transition-all relative">
                     {product.boosted && (
                       <div className="absolute top-2 right-2 z-10">
                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-50 text-yellow-700 text-[10px] font-semibold shadow-sm">
@@ -287,7 +327,7 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
                         </span>
                       </div>
                     )}
-                    <Link href={`/produit/${product.slug}`} className="w-32 h-32 rounded-xl bg-[var(--bg-secondary)] overflow-hidden shrink-0">
+                    <Link href={`/produit/${product.slug}`} className="w-full sm:w-28 sm:h-28 aspect-video sm:aspect-square rounded-xl bg-[var(--bg-secondary)] overflow-hidden shrink-0">
                       <img src={product.image} alt={product.name} className="w-full h-full object-contain" onError={imgError} />
                     </Link>
                     <div className="flex-1 min-w-0">
@@ -297,15 +337,15 @@ function ProductsContent({ products, categories }: { products: Product[]; catego
                       <div className="my-1">
                         <StarRating rating={product.rating} size="xs" />
                       </div>
-                      <div className="flex items-center gap-3 mt-2">
-                        <p className="text-xl font-bold text-[var(--text-primary)]">{product.price.toLocaleString("fr-FR")} F</p>
-                        {hasCreditRates(product.creditRates) && <p className="text-sm text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</p>}
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">{product.price.toLocaleString("fr-FR")} F</p>
+                        {hasCreditRates(product.creditRates) && <p className="text-xs sm:text-sm text-[var(--text-link)] font-semibold">{product.monthlyPrice.toLocaleString("fr-FR")} F/mois</p>}
                       </div>
                       <div className="flex gap-2 mt-2">
-                        <Button size="sm" onClick={() => addItem(product)}>Ajouter au panier</Button>
-                        <Button size="sm" variant="outline" onClick={() => toggleFavorite(product)}>
-                          {isFavorite(product.id) ? "Retirer des favoris" : "Favori"}
-                        </Button>
+                        <Button size="sm" className="flex-1 sm:flex-none" onClick={() => addItem(product)}>Ajouter au panier</Button>
+                        <button onClick={() => toggleFavorite(product)} className="w-9 h-9 rounded-xl border-2 border-[var(--border)] flex items-center justify-center hover:border-red-200 transition-colors shrink-0">
+                          <Heart className={`w-4 h-4 ${isFavorite(product.id) ? "fill-red-500 text-red-500" : "text-[var(--text-secondary)]"}`} />
+                        </button>
                       </div>
                     </div>
                   </AnimatedDiv>
