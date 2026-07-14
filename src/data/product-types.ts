@@ -15,6 +15,7 @@ export interface Product {
   creditRates?: string
   description?: string
   shopId?: string
+  creditMonths?: number
   shop?: { id: string; name: string; slug: string; logo: string; category: string; badges?: { type: string; label: string; color: string; icon?: string }[] }
   badges?: { type: string; label: string; color: string; icon?: string }[]
   boosted?: boolean

@@ -5,7 +5,31 @@ import { queryAll, queryOne } from "@/lib/db"
 import { cached } from "@/lib/cache"
 import { getOrganicProducts, batchCalculateScores, normalizeScores, applyRotation } from "./organic-ranking"
 
-export function formatProduct(p: any): Product {
+const BADGE_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+  premium: { label: "Premium", color: "#FFD700", icon: "crown" },
+  verified: { label: "Vérifié", color: "#1DA1F2", icon: "verified" },
+  featured: { label: "En vedette", color: "#FF6B35", icon: "star" },
+}
+
+async function fetchShopBadges(shopId: string) {
+  if (!shopId) return []
+  const badges = await queryAll<any>(
+    "SELECT type, label, color, icon FROM ShopBadge WHERE shopId = ? AND expiresAt IS NULL",
+    [shopId]
+  )
+  return badges.map(b => ({
+    type: b.type,
+    label: b.label || BADGE_CONFIG[b.type]?.label || b.type,
+    color: b.color || BADGE_CONFIG[b.type]?.color || "#64748B",
+    icon: b.icon || BADGE_CONFIG[b.type]?.icon || "award",
+  }))
+}
+
+export async function formatProduct(p: any, boostedIds?: Set<number>): Promise<Product> {
+  const shopId = p.shop_id ?? p.shopId
+  const shopBadges = shopId ? await fetchShopBadges(shopId) : []
+  const boosted = boostedIds ? boostedIds.has(p.id) : false
+
   return {
     id: p.id,
     name: p.name,
@@ -22,19 +46,23 @@ export function formatProduct(p: any): Product {
     slug: p.slug,
     creditRates: p.creditRates ?? undefined,
     description: p.description ?? undefined,
-    shopId: p.shop_id ?? p.shopId ?? undefined,
-    shop: p.shop_id || p.shop_name ? {
+    creditMonths: p.creditMonths ?? undefined,
+    shopId: shopId ?? undefined,
+    shop: shopId ? {
       id: p.shop_id ?? "",
       name: p.shop_name ?? "",
       slug: p.shop_slug ?? "",
       logo: p.shop_logo ?? "",
       category: p.shop_category ?? "",
+      badges: shopBadges,
     } : undefined,
+    badges: [],
+    boosted,
   }
 }
 
-export function formatProductList(products: any[]): Product[] {
-  return products.map(formatProduct)
+export function formatProductList(products: any[], boostedIds?: Set<number>): Product[] {
+  return products.map(p => formatProduct(p, boostedIds))
 }
 
 export async function getProducts(): Promise<Product[]> {

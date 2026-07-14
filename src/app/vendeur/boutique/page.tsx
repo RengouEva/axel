@@ -94,6 +94,7 @@ export default function SellerBoutiquePage() {
   const [boostDuration, setBoostDuration] = useState(7)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const [boostOptions, setBoostOptions] = useState<{ days: number; price: number }[]>([])
 
   useEffect(() => {
     fetch("/api/categories").then(r => r.json()).then(data => setCategories(data.categories || []))
@@ -141,6 +142,7 @@ export default function SellerBoutiquePage() {
       const ids = new Set<number>()
       if (data.boosts) data.boosts.forEach((b: any) => { if (b.productId) ids.add(b.productId) })
       setBoostedIds(ids)
+      if (data.boostOptions) setBoostOptions(data.boostOptions)
     } catch { /* ignore */ }
   }, [getAuthHeaders])
 
@@ -188,7 +190,7 @@ export default function SellerBoutiquePage() {
       category: p.category,
       price: String(p.price),
       description: (p as any).description || "",
-      creditMonths: "36",
+      creditMonths: String((p as any).creditMonths || 36),
       creditRates: raw,
       images: p.images.length > 0 ? p.images : [p.image],
       inStock: p.inStock,
@@ -334,6 +336,8 @@ export default function SellerBoutiquePage() {
         if (payData.demo || payData.success) {
           setBoostedIds(prev => new Set(prev).add(boostModal.productId))
           alert("✅ Produit boosté avec succès !")
+        } else if (payData.paymentUrl) {
+          window.location.href = payData.paymentUrl
         } else {
           alert(`💳 Paiement requis : ${data.price} F CFA`)
         }
@@ -857,18 +861,18 @@ export default function SellerBoutiquePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E5E7EB]">
-                    {products.filter(p =>
+                    {(() => {
+                    const filtered = products.filter(p =>
                       p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
                       p.brand.toLowerCase().includes(productSearch.toLowerCase())
-                    ).length === 0 ? (
+                    )
+                    return filtered.length === 0 ? (
                       <tr><td colSpan={7} className="text-center py-12 text-[var(--text-secondary)]">
                         <Package className="w-8 h-8 mx-auto mb-2 opacity-40" />
                         Aucun produit trouvé
                       </td></tr>
-                    ) : products.filter(p =>
-                      p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-                      p.brand.toLowerCase().includes(productSearch.toLowerCase())
-                    ).map((p) => (
+                    ) : (
+                      filtered.map((p) => (
                       <tr key={p.id} className="hover:bg-[var(--bg-secondary)] transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -929,17 +933,31 @@ export default function SellerBoutiquePage() {
               <div className="space-y-3 mb-6">
                 <label className="block text-sm font-medium text-[var(--text-primary)]">Durée du boost</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { days: 7, price: 2000, label: "7 jours" },
-                    { days: 15, price: 3500, label: "15 jours" },
-                    { days: 30, price: 5000, label: "30 jours" },
-                  ].map(o => (
+                  {boostOptions.length > 0 ? boostOptions.map(o => (
                     <button key={o.days} onClick={() => setBoostDuration(o.days)}
                       className={`p-3 rounded-xl text-center transition-all ${boostDuration === o.days ? "bg-[var(--text-link)] text-white" : "bg-[var(--bg-secondary)] text-[var(--text-primary)] border-2 border-[var(--border)]"}`}>
-                      <p className="text-xs font-semibold">{o.label}</p>
+                      <p className="text-xs font-semibold">{o.days} jours</p>
                       <p className="text-[10px] opacity-80">{o.price} F</p>
                     </button>
-                  ))}
+                  )) : (
+                    <>
+                      <button onClick={() => setBoostDuration(7)}
+                        className={`p-3 rounded-xl text-center transition-all ${boostDuration === 7 ? "bg-[var(--text-link)] text-white" : "bg-[var(--bg-secondary)] text-[var(--text-primary)] border-2 border-[var(--border)]"}`}>
+                        <p className="text-xs font-semibold">7 jours</p>
+                        <p className="text-[10px] opacity-80">2 000 F</p>
+                      </button>
+                      <button onClick={() => setBoostDuration(15)}
+                        className={`p-3 rounded-xl text-center transition-all ${boostDuration === 15 ? "bg-[var(--text-link)] text-white" : "bg-[var(--bg-secondary)] text-[var(--text-primary)] border-2 border-[var(--border)]"}`}>
+                        <p className="text-xs font-semibold">15 jours</p>
+                        <p className="text-[10px] opacity-80">3 500 F</p>
+                      </button>
+                      <button onClick={() => setBoostDuration(30)}
+                        className={`p-3 rounded-xl text-center transition-all ${boostDuration === 30 ? "bg-[var(--text-link)] text-white" : "bg-[var(--bg-secondary)] text-[var(--text-primary)] border-2 border-[var(--border)]"}`}>
+                        <p className="text-xs font-semibold">30 jours</p>
+                        <p className="text-[10px] opacity-80">5 000 F</p>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex gap-3">

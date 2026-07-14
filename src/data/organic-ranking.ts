@@ -120,11 +120,11 @@ export function calculateQualityScore(product: any): number {
     else if (len > 50) score += 5
   }
 
-  if (product.hasVideo) score += 15
+  if ((product as any).hasVideo) score += 15
 
-  if (product.hasFeatures || product.specs) score += 10
+  if ((product as any).hasFeatures || (product as any).specs) score += 10
 
-  if (product.technicalInfo || product.hasTechnicalInfo) score += 10
+  if ((product as any).technicalInfo || (product as any).hasTechnicalInfo) score += 10
 
   return Math.min(score, 100)
 }
@@ -154,11 +154,8 @@ export function calculateFreshnessScore(createdAt: string, updatedAt?: string): 
   return Math.max(5, 100 - daysDiff * 1.5)
 }
 
-export function calculateAvailabilityScore(inStock: boolean | number, quantity?: number): number {
+export function calculateAvailabilityScore(inStock: boolean | number): number {
   if (!inStock) return 0
-  if (quantity !== undefined && quantity <= 0) return 0
-  if (quantity !== undefined && quantity < 3) return 50
-  if (quantity !== undefined && quantity < 10) return 80
   return 100
 }
 
@@ -202,7 +199,7 @@ export async function calculateSellerReputationScore(shopId: string): Promise<nu
   const shop = await queryOne<any>(
     `SELECT s.rating, s.reviews, s.totalSales, s.createdAt,
             COUNT(DISTINCT p.id) as productCount,
-            COUNT(DISTINCT CASE WHEN p.updatedAt > DATE_SUB(NOW(), INTERVAL 30 DAY) THEN p.id END) as activeProducts,
+            COUNT(DISTINCT p.id) as activeProducts,
             COUNT(DISTINCT sb.id) as badgeCount
      FROM Shop s
      LEFT JOIN Product p ON p.shopId = s.id
@@ -228,7 +225,7 @@ export async function calculateSellerReputationScore(shopId: string): Promise<nu
     score += Math.min(accountAgeDays * 0.5, 15)
   }
 
-  if (shop.sellerVerified) score += 15
+  if ((shop as any).sellerVerified) score += 15
 
   score += Math.min((shop.totalSales || 0) * 0.2, 15)
 
@@ -292,13 +289,13 @@ export async function calculateActivityScore(productId: number, shopId?: string)
   let score = 0
 
   const productActivity = await queryOne<any>(
-    `SELECT updatedAt, createdAt FROM Product WHERE id = ?`,
+    `SELECT createdAt FROM Product WHERE id = ?`,
     [productId]
   )
 
   if (!productActivity) return 0
 
-  const updateRecency = Math.floor((new Date().getTime() - new Date(productActivity.updatedAt || productActivity.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+  const updateRecency = Math.floor((new Date().getTime() - new Date(productActivity.createdAt).getTime()) / (1000 * 60 * 60 * 24))
   if (updateRecency <= 1) score += 25
   else if (updateRecency <= 7) score += 20
   else if (updateRecency <= 30) score += 15
@@ -347,11 +344,11 @@ export async function calculateActivityScore(productId: number, shopId?: string)
 export function calculateUserExperienceScore(product: any): number {
   let score = 50
 
-  if (product.isDuplicate) score -= 40
-  if (product.isSpam) score -= 50
-  if (product.hasCopiedContent) score -= 30
-  if (product.hasInaccurateInfo) score -= 25
-  if (product.hasMisleadingContent) score -= 45
+  if ((product as any).isDuplicate) score -= 40
+  if ((product as any).isSpam) score -= 50
+  if ((product as any).hasCopiedContent) score -= 30
+  if ((product as any).hasInaccurateInfo) score -= 25
+  if ((product as any).hasMisleadingContent) score -= 45
 
   const images: string[] = (() => {
     if (!product.images) return []
@@ -367,8 +364,8 @@ export function calculateUserExperienceScore(product: any): number {
 
   if (product.name && product.name.length < 5) score -= 5
 
-  if (product.isVerifiedListing) score += 15
-  if (product.hasAuthenticPhotos) score += 10
+  if ((product as any).isVerifiedListing) score += 15
+  if ((product as any).hasAuthenticPhotos) score += 10
 
   return Math.max(0, Math.min(score, 100))
 }
@@ -512,17 +509,17 @@ export function applyPersonalization(
   let bonus = 0
 
   if (context.countryId) {
-    const countries = [product.countryId, product.targetCountry].filter(Boolean)
+    const countries = [(product as any).countryId, (product as any).targetCountry].filter(Boolean)
     if (countries.includes(context.countryId)) bonus += 10
   }
 
   if (context.cityId) {
-    const cities = [product.cityId, product.targetCity].filter(Boolean)
+    const cities = [(product as any).cityId, (product as any).targetCity].filter(Boolean)
     if (cities.includes(context.cityId)) bonus += 8
   }
 
   if (context.districtId) {
-    const districts = [product.districtId, product.targetDistrict].filter(Boolean)
+    const districts = [(product as any).districtId, (product as any).targetDistrict].filter(Boolean)
     if (districts.includes(context.districtId)) bonus += 5
   }
 
@@ -711,7 +708,7 @@ export async function getOrganicProducts(
      FROM Product p
      LEFT JOIN Shop s ON s.id = p.shopId
      ${whereSQL}
-     ORDER BY p.updatedAt DESC
+     ORDER BY p.createdAt DESC
      LIMIT ? OFFSET ?`,
     [...params, limit, (page - 1) * limit]
   )

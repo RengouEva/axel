@@ -224,7 +224,7 @@ export async function POST(request: Request) {
     const result = await execute(
       `INSERT INTO Product (name, brand, category, price, monthlyPrice, description, image, images, creditRates, slug, shopId, inStock, promotion)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, brand, category, price, Math.round(price / months), description || null, finalImage, finalImages, creditRates || defaultRates, slug, shop.id, inStock ?? true, promotion ?? false]
+      [name, brand, category, price, price / months, description || null, finalImage, finalImages, creditRates || defaultRates, slug, shop.id, inStock ?? true, promotion ?? false]
     )
     const newProduct = await queryOne<any>("SELECT * FROM Product WHERE id = ?", [result.insertId])
     return NextResponse.json(newProduct, { status: 201 })

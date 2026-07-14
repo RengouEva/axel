@@ -25,7 +25,10 @@ export const productCreateSchema = z.object({
   price: z.number().int().positive("Le prix doit être positif"),
   description: z.string().max(5000).optional(),
   image: z.string().max(500).optional(),
-  images: z.string().max(5000).optional(),
+  images: z.union([z.string().max(5000), z.array(z.string().max(500)).max(10)]).optional().transform((val) => {
+    if (Array.isArray(val)) return JSON.stringify(val)
+    return val
+  }),
   creditMonths: z.number().int().min(1).max(48).optional(),
   creditRates: z.string().max(1000).optional(),
   inStock: z.boolean().optional(),
@@ -39,7 +42,10 @@ export const productUpdateSchema = z.object({
   price: z.number().int().positive().optional(),
   description: z.string().max(5000).optional(),
   image: z.string().max(500).optional(),
-  images: z.string().max(5000).optional(),
+  images: z.union([z.string().max(5000), z.array(z.string().max(500)).max(10)]).optional().transform((val) => {
+    if (Array.isArray(val)) return JSON.stringify(val)
+    return val
+  }),
   creditMonths: z.number().int().min(1).max(48).optional(),
   creditRates: z.string().max(1000).optional(),
   inStock: z.boolean().optional(),

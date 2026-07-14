@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { queryOne, execute } from "@/lib/db"
 import { requireAuth } from "@/lib/require-auth"
-import { getPaymentConfig } from "@/lib/payment"
+import { getPaymentConfig, initializePayment } from "@/lib/payment"
 
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36).toUpperCase()}`
@@ -74,13 +74,31 @@ export async function POST(request: Request) {
       })
     }
 
-    const reference = `PAY-${generateId("REF")}`
+    const meta = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : (transaction.metadata || {})
+    const amount = transaction.amount
+    const email = auth.user.email || "seller@example.com"
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://axel.interdata.group"
+    const callbackUrl = `${siteUrl}/paiement/callback?transactionId=${transaction.id}`
+
+    const paymentResult = await initializePayment({
+      email,
+      amount,
+      orderId: transaction.id,
+      callbackUrl,
+      customerName: auth.user.email?.split('@')[0] || "Vendeur",
+    })
+
+    if (!paymentResult.success) {
+      return NextResponse.json({ error: paymentResult.error }, { status: 400 })
+    }
+
+    const reference = paymentResult.reference
     await execute("UPDATE `Transaction` SET reference = ? WHERE id = ?", [reference, transactionId])
 
     return NextResponse.json({
       success: true,
       reference,
-      paymentUrl: `https://payments.example.com/checkout/${reference}`,
+      paymentUrl: paymentResult.authorizationUrl,
       transaction: { ...transaction, reference },
     })
   } catch (error) {

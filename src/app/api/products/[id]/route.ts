@@ -9,13 +9,24 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (!auth.success) return auth.response
 
     const { id } = await params
+    const productId = Number(id)
+
+    const product = await queryOne<any>("SELECT shopId FROM Product WHERE id = ?", [productId])
+    if (!product) {
+      return NextResponse.json({ error: "Produit non trouvé" }, { status: 404 })
+    }
+
+    const shop = await queryOne<any>("SELECT sellerId FROM Shop WHERE id = ?", [product.shopId])
+    if (!shop || (shop.sellerId !== auth.user.userId && auth.user.role !== "admin")) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
+    }
+
     const body = await request.json()
     const validation = validateInput(productUpdateSchema, body)
     if (!validation.success) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    const productId = Number(id)
     const updates = validation.data as Record<string, unknown>
     const setClauses = Object.keys(updates).map(k => `${k} = ?`)
     const values = Object.values(updates)
@@ -46,11 +57,23 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auth = await requireRole(request, ["admin"])
+    const auth = await requireRole(request, ["seller", "admin"])
     if (!auth.success) return auth.response
 
     const { id } = await params
-    await execute("DELETE FROM Product WHERE id = ?", [Number(id)])
+    const productId = Number(id)
+
+    const product = await queryOne<any>("SELECT shopId FROM Product WHERE id = ?", [productId])
+    if (!product) {
+      return NextResponse.json({ error: "Produit non trouvé" }, { status: 404 })
+    }
+
+    const shop = await queryOne<any>("SELECT sellerId FROM Shop WHERE id = ?", [product.shopId])
+    if (!shop || (shop.sellerId !== auth.user.userId && auth.user.role !== "admin")) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 403 })
+    }
+
+    await execute("DELETE FROM Product WHERE id = ?", [productId])
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("[PRODUCT_DELETE]", error)
