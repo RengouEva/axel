@@ -125,3 +125,43 @@ export async function updateTeamMemberRole(id: number, role: string, permissions
 export async function removeTeamMember(id: number): Promise<void> {
   await execute("UPDATE TeamMember SET status = 'removed' WHERE id = ?", [id])
 }
+
+export async function enableTwoFactor(shopId: string, method: string, secret: string): Promise<void> {
+  const existing = await queryOne<any>("SELECT shopId FROM SellerSecurity WHERE shopId = ?", [shopId])
+  if (existing) {
+    await execute(
+      "UPDATE SellerSecurity SET twoFactorEnabled = 1, twoFactorMethod = ?, twoFactorSecret = ? WHERE shopId = ?",
+      [method, secret, shopId]
+    )
+  } else {
+    await execute(
+      "INSERT INTO SellerSecurity (shopId, twoFactorEnabled, twoFactorMethod, twoFactorSecret) VALUES (?, 1, ?, ?)",
+      [shopId, method, secret]
+    )
+  }
+}
+
+export async function disableTwoFactor(shopId: string): Promise<void> {
+  await execute(
+    "UPDATE SellerSecurity SET twoFactorEnabled = 0, twoFactorMethod = NULL, twoFactorSecret = NULL WHERE shopId = ?",
+    [shopId]
+  )
+}
+
+export async function addTeamMember(shopId: string, userId: number, role: string): Promise<void> {
+  await execute(
+    "INSERT INTO TeamMember (shopId, userId, role, status) VALUES (?, ?, ?, 'active')",
+    [shopId, userId, role]
+  )
+}
+
+export async function getSecurityScore(shopId: string): Promise<number> {
+  const [settings, members] = await Promise.all([
+    queryOne<SellerSecurity>("SELECT * FROM SellerSecurity WHERE shopId = ?", [shopId]),
+    queryAll<any>("SELECT id FROM TeamMember WHERE shopId = ? AND status = 'active'", [shopId]),
+  ])
+  let score = 0
+  if (settings?.twoFactorEnabled) score += 40
+  score += Math.min(members.length * 10, 30)
+  return score
+}

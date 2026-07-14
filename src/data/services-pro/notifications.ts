@@ -59,6 +59,14 @@ export async function deleteNotification(id: string): Promise<void> {
   await execute("DELETE FROM SellerNotification WHERE id = ?", [id])
 }
 
+export async function getUnreadCount(shopId: string): Promise<number> {
+  const row = await queryOne<{ count: number }>(
+    "SELECT COUNT(*) as count FROM SellerNotification WHERE shopId = ? AND isRead = 0",
+    [shopId]
+  )
+  return row?.count ?? 0
+}
+
 export async function checkStockAlertsAndNotify(): Promise<void> {
   const alerts = await queryAll<any>(
     `SELECT sa.*, p.name as productName, p.shopId,
