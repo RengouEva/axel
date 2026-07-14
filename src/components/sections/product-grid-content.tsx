@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingCart, Star, Eye, Zap, Store, Heart } from "lucide-react"
+import { ShoppingCart, Star, Eye, Zap, Store, Heart, Package } from "lucide-react"
 import Button from "@/components/ui/button"
 import Badge from "@/components/ui/badge"
 import StarRating from "@/components/ui/star-rating"
@@ -49,6 +49,13 @@ export default function ProductGridContent({ products }: { products: Product[] }
           </div>
         </AnimatedDiv>
 
+        {products.length === 0 ? (
+          <div className="text-center py-16">
+            <Package className="w-16 h-16 text-[var(--text-secondary)]/40 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Aucun produit pour le moment</h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">Les produits apparaîtront ici une fois ajoutés par les vendeurs.</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {products.map((product, index) => {
             const isFav = isFavorite(product.id)
@@ -162,6 +169,7 @@ export default function ProductGridContent({ products }: { products: Product[] }
             )
           })}
         </div>
+        )}
       </div>
     </section>
   )

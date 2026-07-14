@@ -1,12 +1,13 @@
 ﻿import ProductGridContent from "./product-grid-content"
+import { getRankedProducts } from "@/data/products"
 
 export default async function ProductGrid() {
   let products: unknown[] = []
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-    const res = await fetch(`${baseUrl}/api/products?limit=8`, { cache: "no-store" })
-    const data = await res.json()
-    products = Array.isArray(data?.products) ? data.products : []
-  } catch {}
+    const result = await getRankedProducts({ limit: 8 })
+    products = result.products
+  } catch (e) {
+    console.error("[ProductGrid] Erreur chargement produits:", e)
+  }
   return <ProductGridContent products={products as never[]} />
 }
