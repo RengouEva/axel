@@ -36,12 +36,21 @@ export async function getFlashSales(shopId: string): Promise<FlashSale[]> {
     "SELECT * FROM FlashSale WHERE shopId = ? ORDER BY createdAt DESC",
     [shopId]
   )
-  for (const sale of sales) {
-    const products = await queryAll<any>(
-      "SELECT productId FROM FlashSaleProduct WHERE flashSaleId = ?",
-      [sale.id]
+  if (sales.length > 0) {
+    const ids = sales.map((s: any) => s.id)
+    const placeholders = ids.map(() => "?").join(",")
+    const rows = await queryAll<any>(
+      `SELECT flashSaleId, productId FROM FlashSaleProduct WHERE flashSaleId IN (${placeholders})`,
+      ids
     )
-    sale.products = products.map((p: any) => p.productId)
+    const grouped: Record<string, number[]> = {}
+    for (const row of rows) {
+      if (!grouped[row.flashSaleId]) grouped[row.flashSaleId] = []
+      grouped[row.flashSaleId].push(row.productId)
+    }
+    for (const sale of sales) {
+      sale.products = grouped[sale.id] || []
+    }
   }
   return sales as FlashSale[]
 }
@@ -56,10 +65,12 @@ export async function createFlashSale(shopId: string, data: {
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [id, shopId, data.name, data.description || null, data.discountPercent, data.startDate, data.endDate]
   )
-  for (const pid of data.productIds) {
+  if (data.productIds.length > 0) {
+    const placeholders = data.productIds.map(() => "(?, ?)").join(",")
+    const flatParams = data.productIds.flatMap(pid => [id, pid])
     await execute(
-      "INSERT INTO FlashSaleProduct (flashSaleId, productId) VALUES (?, ?)",
-      [id, pid]
+      `INSERT INTO FlashSaleProduct (flashSaleId, productId) VALUES ${placeholders}`,
+      flatParams
     )
   }
   return queryOne<FlashSale>("SELECT * FROM FlashSale WHERE id = ?", [id])

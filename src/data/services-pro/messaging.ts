@@ -22,11 +22,21 @@ export async function getMessages(shopId: string, page = 1, limit = 20): Promise
     ),
   ])
 
-  for (const msg of messages) {
-    msg.replies = await queryAll<any>(
-      "SELECT * FROM SellerMessageReply WHERE messageId = ? ORDER BY createdAt ASC",
-      [msg.id]
+  if (messages.length > 0) {
+    const ids = messages.map((m: any) => m.id)
+    const placeholders = ids.map(() => "?").join(",")
+    const allReplies = await queryAll<any>(
+      `SELECT * FROM SellerMessageReply WHERE messageId IN (${placeholders}) ORDER BY createdAt ASC`,
+      ids
     )
+    const grouped: Record<string, any[]> = {}
+    for (const reply of allReplies) {
+      if (!grouped[reply.messageId]) grouped[reply.messageId] = []
+      grouped[reply.messageId].push(reply)
+    }
+    for (const msg of messages) {
+      msg.replies = grouped[msg.id] || []
+    }
   }
 
   return {

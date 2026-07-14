@@ -909,6 +909,35 @@ export async function GET(request: Request) {
     }
     results.push(`${CREATE_TABLES.length} tables créées/vérifiées`)
 
+    const missingIndexes = [
+      "ALTER TABLE City ADD INDEX idx_city_countryId (countryId)",
+      "ALTER TABLE District ADD INDEX idx_district_cityId (cityId)",
+      "ALTER TABLE Shop ADD INDEX idx_shop_countryId (countryId)",
+      "ALTER TABLE Shop ADD INDEX idx_shop_cityId (cityId)",
+      "ALTER TABLE Shop ADD INDEX idx_shop_districtId (districtId)",
+      "ALTER TABLE Orders ADD INDEX idx_orders_countryId (countryId)",
+      "ALTER TABLE Orders ADD INDEX idx_orders_cityId (cityId)",
+      "ALTER TABLE Orders ADD INDEX idx_orders_districtId (districtId)",
+      "ALTER TABLE DeliveryPerson ADD INDEX idx_dp_countryId (countryId)",
+      "ALTER TABLE DeliveryPerson ADD INDEX idx_dp_districtId (districtId)",
+      "ALTER TABLE DeliveryPerson ADD INDEX idx_dp_userId (userId)",
+      "ALTER TABLE DeliveryMission ADD INDEX idx_dm_countryId (countryId)",
+      "ALTER TABLE DeliveryMission ADD INDEX idx_dm_districtId (districtId)",
+      "ALTER TABLE ProductStock ADD INDEX idx_ps_countryId (countryId)",
+      "ALTER TABLE ProductStock ADD INDEX idx_ps_cityId (cityId)",
+      "ALTER TABLE ProductStock ADD INDEX idx_ps_districtId (districtId)",
+      "ALTER TABLE SellerVerification ADD INDEX idx_sv_verifiedBy (verifiedBy)",
+      "ALTER TABLE ReturnRequest ADD INDEX idx_rr_productId (productId)",
+      "ALTER TABLE ReturnRequest ADD INDEX idx_rr_userId (userId)",
+      "ALTER TABLE ReturnRequest ADD INDEX idx_rr_reviewedBy (reviewedBy)",
+      "ALTER TABLE FraudReport ADD INDEX idx_fr_reportedBy (reportedBy)",
+      "ALTER TABLE FraudReport ADD INDEX idx_fr_reviewedBy (reviewedBy)",
+    ]
+    for (const idx of missingIndexes) {
+      try { await execute(idx) } catch { /* déjà existant */ }
+    }
+    results.push(`indexes FK ajoutés/vérifiés`)
+
     const fkConstraints = [
       "ALTER TABLE AdCampaign ADD CONSTRAINT fk_adcampaign_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
       "ALTER TABLE AdCampaign ADD CONSTRAINT fk_adcampaign_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
@@ -936,7 +965,7 @@ export async function GET(request: Request) {
       "ALTER TABLE ProductScheduledPublish ADD CONSTRAINT fk_psp_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
       "ALTER TABLE StockAlert ADD CONSTRAINT fk_sa_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
       "ALTER TABLE StockAlert ADD CONSTRAINT fk_sa_shop2 FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
-      "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_order FOREIGN KEY (orderId) REFERENCES `Order`(id) ON DELETE CASCADE",
+      "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_order FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE CASCADE",
       "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
       "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
       "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
@@ -950,7 +979,7 @@ export async function GET(request: Request) {
       "ALTER TABLE BogoOffer ADD CONSTRAINT fk_bo_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
       "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
       "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
-      "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_order FOREIGN KEY (orderId) REFERENCES `Order`(id) ON DELETE SET NULL",
+      "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_order FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE SET NULL",
       "ALTER TABLE SellerMessageReply ADD CONSTRAINT fk_smr_message FOREIGN KEY (messageId) REFERENCES SellerMessage(id) ON DELETE CASCADE",
       "ALTER TABLE AutoReply ADD CONSTRAINT fk_ar_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
       "ALTER TABLE MessageTemplate ADD CONSTRAINT fk_mt_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",

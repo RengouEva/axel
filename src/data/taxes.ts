@@ -25,14 +25,14 @@ export async function getAllTaxRates(): Promise<TaxRate[]> {
 }
 
 export async function saveTaxRates(rates: TaxRate[]): Promise<void> {
-  for (const rate of rates) {
-    const existing = await queryOne<TaxRate>("SELECT * FROM TaxRate WHERE countryId = ?", [rate.countryId])
-    if (existing) {
-      await execute("UPDATE TaxRate SET rate = ?, label = ? WHERE countryId = ?", [rate.rate, rate.label, rate.countryId])
-    } else {
-      await execute("INSERT INTO TaxRate (countryId, rate, label) VALUES (?, ?, ?)", [rate.countryId, rate.rate, rate.label])
-    }
-  }
+  if (rates.length === 0) return
+  const placeholders = rates.map(() => "(?, ?, ?)").join(",")
+  const flatParams = rates.flatMap(r => [r.countryId, r.rate, r.label])
+  await execute(
+    `INSERT INTO TaxRate (countryId, rate, label) VALUES ${placeholders}
+     ON DUPLICATE KEY UPDATE rate = VALUES(rate), label = VALUES(label)`,
+    flatParams
+  )
 }
 
 export async function getDefaultTaxRates(): Promise<TaxRate[]> {

@@ -63,13 +63,13 @@ export async function duplicateProduct(productId: number): Promise<number | null
 
   const variants = await getVariants(productId)
   if (variants.length > 0 && result.insertId) {
-    for (const v of variants) {
-      await execute(
-        `INSERT INTO ProductVariant (productId, name, value, sku, price, stock, image)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [result.insertId, v.name, v.value, v.sku, v.price, v.stock, v.image]
-      )
-    }
+    const placeholders = variants.map(() => "(?, ?, ?, ?, ?, ?, ?)").join(",")
+    const flatParams = variants.flatMap(v => [result.insertId, v.name, v.value, v.sku, v.price, v.stock, v.image])
+    await execute(
+      `INSERT INTO ProductVariant (productId, name, value, sku, price, stock, image)
+       VALUES ${placeholders}`,
+      flatParams
+    )
   }
   return result.insertId ?? null
 }
@@ -103,14 +103,18 @@ export async function processScheduledPublishes(): Promise<void> {
     "SELECT * FROM ProductScheduledPublish WHERE status = 'pending' AND scheduledAt <= ?",
     [now]
   )
-  for (const p of pendings) {
+  if (pendings.length > 0) {
+    const ids = pendings.map((p: any) => p.id)
+    const productIds = pendings.map((p: any) => p.productId)
+    const prodPlaceholders = productIds.map(() => "?").join(",")
+    const idPlaceholders = ids.map(() => "?").join(",")
     await execute(
-      "UPDATE Product SET inStock = 1 WHERE id = ?",
-      [p.productId]
+      `UPDATE Product SET inStock = 1 WHERE id IN (${prodPlaceholders})`,
+      productIds
     )
     await execute(
-      "UPDATE ProductScheduledPublish SET status = 'published', publishedAt = NOW() WHERE id = ?",
-      [p.id]
+      `UPDATE ProductScheduledPublish SET status = 'published', publishedAt = NOW() WHERE id IN (${idPlaceholders})`,
+      ids
     )
   }
 }

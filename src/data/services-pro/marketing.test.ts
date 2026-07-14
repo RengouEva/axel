@@ -149,8 +149,11 @@ describe("getFlashSales", () => {
       { id: "flash-2", name: "Clearance" },
     ]
     mockQueryAll.mockReturnValueOnce(Promise.resolve(mockSales))
-    mockQueryAll.mockReturnValueOnce(Promise.resolve([{ productId: 10 }, { productId: 20 }]))
-    mockQueryAll.mockReturnValueOnce(Promise.resolve([{ productId: 30 }]))
+    mockQueryAll.mockReturnValueOnce(Promise.resolve([
+      { flashSaleId: "flash-1", productId: 10 },
+      { flashSaleId: "flash-1", productId: 20 },
+      { flashSaleId: "flash-2", productId: 30 },
+    ]))
 
     const result = await getFlashSales("shop-1")
 
@@ -161,13 +164,8 @@ describe("getFlashSales", () => {
     )
     expect(mockQueryAll).toHaveBeenNthCalledWith(
       2,
-      "SELECT productId FROM FlashSaleProduct WHERE flashSaleId = ?",
-      ["flash-1"]
-    )
-    expect(mockQueryAll).toHaveBeenNthCalledWith(
-      3,
-      "SELECT productId FROM FlashSaleProduct WHERE flashSaleId = ?",
-      ["flash-2"]
+      expect.stringContaining("SELECT flashSaleId, productId FROM FlashSaleProduct WHERE flashSaleId IN"),
+      ["flash-1", "flash-2"]
     )
     expect(result).toHaveLength(2)
     expect(result[0].products).toEqual([10, 20])
