@@ -46,6 +46,7 @@ const API_PUBLIC_ROUTES = [
   "/api/plans",
   "/api/delivery",
   "/api/organic",
+  "/api/ads/serve",
 ]
 
 const API_READ_ROUTES: string[] = []

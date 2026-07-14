@@ -48,8 +48,12 @@ export default function SearchBar({ className }: { className?: string }) {
     setLoading(true)
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
+      if (!res.ok) { setResults({ shops: [], products: [] }); setLoading(false); return }
       const data = await res.json()
-      setResults(data)
+      setResults({
+        shops: Array.isArray(data?.shops) ? data.shops : [],
+        products: Array.isArray(data?.products) ? data.products : [],
+      })
     } catch {
       setResults({ shops: [], products: [] })
     } finally {
