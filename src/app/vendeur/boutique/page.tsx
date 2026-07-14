@@ -308,7 +308,18 @@ export default function SellerBoutiquePage() {
         setBoostedIds(prev => new Set(prev).add(boostModal.productId))
         alert("✅ Produit boosté avec succès !")
       } else if (data.requiresPayment) {
-        alert(`💳 Paiement requis : ${data.price} F CFA. Transaction : ${data.transaction.id}`)
+        const payRes = await fetch("/api/payments/initiate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+          body: JSON.stringify({ transactionId: data.transaction.id }),
+        })
+        const payData = await payRes.json()
+        if (payData.demo || payData.success) {
+          setBoostedIds(prev => new Set(prev).add(boostModal.productId))
+          alert("✅ Produit boosté avec succès !")
+        } else {
+          alert(`💳 Paiement requis : ${data.price} F CFA`)
+        }
       }
       setBoostModal(null)
     } catch { alert("Erreur lors du boost") }

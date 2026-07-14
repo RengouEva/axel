@@ -63,6 +63,9 @@ const nextConfig: NextConfig = {
       headers: [
         { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
         { key: "Pragma", value: "no-cache" },
+        { key: "Access-Control-Allow-Origin", value: "*" },
+        { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS" },
+        { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
       ],
     },
   ],

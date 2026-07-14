@@ -152,13 +152,15 @@ export default function AbonnementPage() {
       const initData = await initRes.json()
       if (!initRes.ok) throw new Error(initData.error || "Erreur d'initiation du paiement")
 
-      const confirmRes = await fetch("/api/payments/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ paymentId: initData.paymentId, planId, type: "subscription" }),
-      })
-      const confirmData = await confirmRes.json()
-      if (!confirmRes.ok) throw new Error(confirmData.error || "Erreur de confirmation du paiement")
+      if (!initData.demo) {
+        const confirmRes = await fetch("/api/payments/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+          body: JSON.stringify({ paymentId: initData.paymentId, planId, type: "subscription" }),
+        })
+        const confirmData = await confirmRes.json()
+        if (!confirmRes.ok) throw new Error(confirmData.error || "Erreur de confirmation du paiement")
+      }
 
       fetchSubscription()
       setShowPayment(null)

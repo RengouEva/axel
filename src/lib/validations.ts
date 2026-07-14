@@ -179,6 +179,94 @@ export const planUpdateSchema = z.object({
   isActive: z.boolean().optional(),
 })
 
+export const adCampaignCreateSchema = z.object({
+  name: z.string().min(1, "Le nom est requis").max(200),
+  type: z.enum(["sponsored_product", "sponsored_shop", "banner", "event"]),
+  objective: z.string().optional(),
+  productId: z.number().int().positive().optional(),
+  shopId: z.string().min(1, "La boutique est requise"),
+  budget: z.number().int().min(0, "Le budget doit être positif"),
+  dailyBudget: z.number().int().min(0).optional(),
+  startDate: z.string().min(1, "La date de début est requise"),
+  endDate: z.string().min(1, "La date de fin est requise"),
+  targetCountry: z.string().optional(),
+  targetCategory: z.string().optional(),
+  targetCity: z.string().optional(),
+  bannerImage: z.string().optional(),
+  bannerUrl: z.string().optional(),
+  placements: z.array(z.object({
+    id: z.string().min(1),
+    bid: z.number().int().min(0).default(0),
+  })).optional(),
+  isBooster: z.boolean().optional(),
+  durationDays: z.number().int().positive().optional(),
+})
+
+export const adCampaignUpdateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  objective: z.string().optional(),
+  budget: z.number().int().min(0).optional(),
+  dailyBudget: z.number().int().min(0).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  targetCountry: z.string().optional(),
+  targetCategory: z.string().optional(),
+  targetCity: z.string().optional(),
+  productId: z.number().int().positive().optional(),
+  bannerImage: z.string().optional(),
+  bannerUrl: z.string().optional(),
+  status: z.enum(["active", "paused", "cancelled"]).optional(),
+})
+
+export const adServeQuerySchema = z.object({
+  slot: z.string().min(1, "Le slot est requis"),
+  country: z.string().optional(),
+  category: z.string().optional(),
+  city: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(10).default(3),
+  exclude: z.string().optional(),
+})
+
+export const adClickSchema = z.object({
+  campaignId: z.string().min(1),
+  placementId: z.string().optional(),
+  sessionId: z.string().optional(),
+  userId: z.number().int().positive().optional(),
+})
+
+export const adPlacementUpdateSchema = z.object({
+  slot: z.string().min(1).optional(),
+  label: z.string().min(1).optional(),
+  isActive: z.boolean().optional(),
+  auctionEnabled: z.boolean().optional(),
+  basePrice: z.number().int().min(0).optional(),
+})
+
+export const adminVerificationActionSchema = z.object({
+  action: z.enum(["approve", "reject"]),
+  reason: z.string().optional(),
+})
+
+export const adminReturnUpdateSchema = z.object({
+  status: z.enum(["pending", "approved", "rejected", "picked_up", "received", "refunded", "cancelled"]),
+  reviewedBy: z.number().int().positive(),
+  refundAmount: z.number().int().min(0).optional(),
+  refundMethod: z.string().optional(),
+  notes: z.string().optional(),
+})
+
+export const adminScoreSchema = z.object({
+  productId: z.number().int().positive(),
+  score: z.number().int().min(0).max(1000),
+  reason: z.string().max(500).optional(),
+})
+
+export const adminPremiumSchema = z.object({
+  planId: z.number().int().positive(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+})
+
 export function validateInput<T>(schema: z.ZodSchema<T>, data: unknown): {
   success: true
   data: T

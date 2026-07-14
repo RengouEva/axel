@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Check, CreditCard, Truck, MapPin, Package, ArrowLeft, Loader, ChevronDown } from "lucide-react"
+import { Check, CreditCard, Smartphone, Banknote, Truck, MapPin, Package, ArrowLeft, Loader, ChevronDown, ExternalLink } from "lucide-react"
 import Button from "@/components/ui/button"
 import Input from "@/components/ui/input"
 import { useCart } from "@/lib/cart-context"
@@ -10,8 +10,51 @@ import { useNotifications } from "@/lib/notification-context"
 import { AnimatedDiv } from "@/lib/animations"
 import type { Country, City, District } from "@/data/delivery"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 const steps = ["Adresse", "Livraison", "Paiement", "Confirmation"]
+
+const CREDIT_METHODS = [
+  {
+    id: "visa",
+    label: "Visa",
+    desc: "Paiement par carte Visa",
+    icon: CreditCard,
+  },
+  {
+    id: "mastercard",
+    label: "Mastercard",
+    desc: "Paiement par carte Mastercard",
+    icon: CreditCard,
+  },
+  {
+    id: "orange_money",
+    label: "Orange Money",
+    desc: "Paiement via Orange Money Cameroun",
+    icon: Smartphone,
+  },
+  {
+    id: "mtn_mobile",
+    label: "MTN Mobile Money",
+    desc: "Paiement via MTN Mobile Money",
+    icon: Smartphone,
+  },
+  {
+    id: "wave",
+    label: "Wave",
+    desc: "Paiement via Wave Cameroun",
+    icon: Banknote,
+  },
+]
+
+const CASH_METHODS = [
+  {
+    id: "cash_on_delivery",
+    label: "Paiement à la livraison",
+    desc: "Payez en espèces à la réception de votre commande",
+    icon: Banknote,
+  },
+]
 
 function SelectField({ id, label, value, onChange, options, placeholder }: {
   id: string; label: string; value: string; onChange: (v: string) => void; options: { id: string; name: string }[]; placeholder: string
@@ -38,6 +81,7 @@ function SelectField({ id, label, value, onChange, options, placeholder }: {
 }
 
 export default function CheckoutPage() {
+  const searchParams = useSearchParams()
   const [currentStep, setCurrentStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState("")
@@ -58,8 +102,21 @@ export default function CheckoutPage() {
     quartier: "DLA-CT",
     pays: "CM",
     modeLivraison: "standard",
-    carte: "", nomCarte: "", exp: "", cvv: "",
+    modePaiement: "",
   })
+
+  useEffect(() => {
+    const payment = searchParams.get("payment")
+    const oid = searchParams.get("orderId")
+    if (payment === "success" && oid) {
+      setOrderId(oid)
+      clearCart()
+      setCurrentStep(3)
+      addNotification({ title: "Paiement confirmé", message: `Votre commande ${oid} a été payée avec succès.`, type: "order" })
+    } else if (payment === "failed" && oid) {
+      addNotification({ title: "Paiement échoué", message: "Le paiement n'a pas abouti. Vous pouvez réessayer.", type: "system" })
+    }
+  }, [searchParams, clearCart, addNotification])
 
   useEffect(() => {
     fetch("/api/locations").then(r => r.json()).then(data => {
@@ -92,7 +149,7 @@ export default function CheckoutPage() {
   const canProceed = () => {
     if (currentStep === 0) return form.nom && form.email && form.telephone && form.adresse
     if (currentStep === 1) return true
-    if (currentStep === 2) return form.carte.length >= 16 && form.nomCarte && form.exp.length >= 4 && form.cvv.length >= 3
+    if (currentStep === 2) return !!form.modePaiement
     return true
   }
 
@@ -140,10 +197,41 @@ export default function CheckoutPage() {
         }),
       })
 
-      setOrderId(order.id)
-      addNotification({ title: "Commande confirmée", message: `Votre commande ${order.id} a été confirmée.`, type: "order" })
-      clearCart()
-      setCurrentStep(3)
+      if (form.modePaiement === "cash_on_delivery") {
+        await fetch("/api/orders/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: order.id, paymentMethod: "cash_on_delivery" }),
+        })
+        setOrderId(order.id)
+        addNotification({ title: "Commande confirmée", message: `Votre commande ${order.id} sera payée à la livraison.`, type: "order" })
+        clearCart()
+        setCurrentStep(3)
+        return
+      }
+
+      const paymentRes = await fetch("/api/payment/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          amount: total,
+          orderId: order.id,
+          customerName: form.nom,
+          customerPhone: form.telephone,
+        }),
+      })
+
+      if (!paymentRes.ok) {
+        setOrderId(order.id)
+        setCurrentStep(3)
+        addNotification({ title: "Commande créée", message: `Votre commande ${order.id} a été créée. Contactez-nous pour finaliser le paiement.`, type: "order" })
+        clearCart()
+        return
+      }
+
+      const paymentData = await paymentRes.json()
+      window.location.href = paymentData.authorizationUrl
     } catch {
       addNotification({ title: "Erreur", message: "Impossible de passer la commande. Réessayez.", type: "system" })
     } finally {
@@ -267,31 +355,89 @@ export default function CheckoutPage() {
         {currentStep === 2 && (
           <AnimatedDiv fade slideUp className="space-y-6">
             <div className="rounded-2xl border-2 border-[var(--border)] p-6 space-y-4">
-              <h2 className="font-bold text-[var(--text-primary)] flex items-center gap-2"><CreditCard className="w-5 h-5 text-[var(--text-link)]" aria-hidden="true" /> Paiement</h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label htmlFor="checkout-nomcarte" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Nom sur la carte</label>
-                  <Input id="checkout-nomcarte" placeholder="Nom sur la carte" value={form.nomCarte} onChange={e => updateForm("nomCarte", e.target.value)} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor="checkout-carte" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Numéro de carte</label>
-                  <Input id="checkout-carte" placeholder="0000 0000 0000 0000" value={form.carte} onChange={e => updateForm("carte", e.target.value.replace(/\D/g, "").slice(0, 16))} />
-                </div>
-                <div>
-                  <label htmlFor="checkout-exp" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Date d'expiration</label>
-                  <Input id="checkout-exp" placeholder="MM/AA" value={form.exp} onChange={e => updateForm("exp", e.target.value.replace(/\D/g, "").slice(0, 4))} />
-                </div>
-                <div>
-                  <label htmlFor="checkout-cvv" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">CVV</label>
-                  <Input id="checkout-cvv" placeholder="CVV" type="password" value={form.cvv} onChange={e => updateForm("cvv", e.target.value.replace(/\D/g, "").slice(0, 3))} />
-                </div>
+              <h2 className="font-bold text-[var(--text-primary)] flex items-center gap-2"><CreditCard className="w-5 h-5 text-[var(--text-link)]" aria-hidden="true" /> Mode de paiement</h2>
+
+              <div>
+                <p className="text-sm font-medium text-[var(--text-primary)] mb-3">Paiement en ligne</p>
+                <fieldset>
+                  <legend className="sr-only">Paiement en ligne</legend>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {CREDIT_METHODS.map((method) => {
+                      const Icon = method.icon
+                      return (
+                        <button
+                          key={method.id}
+                          onClick={() => updateForm("modePaiement", method.id)}
+                          className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                            form.modePaiement === method.id
+                              ? "border-[var(--border-hover)] bg-[var(--text-link)]/5"
+                              : "border-[var(--border)] hover:border-[var(--border-hover)]/20"
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                            form.modePaiement === method.id
+                              ? "bg-[var(--text-link)] text-white"
+                              : "bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
+                          }`}>
+                            <Icon className="w-5 h-5" aria-hidden="true" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-[var(--text-primary)]">{method.label}</p>
+                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{method.desc}</p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 ${
+                            form.modePaiement === method.id ? "border-[var(--border-hover)]" : "border-[var(--border)]"
+                          }`} aria-hidden="true">
+                            {form.modePaiement === method.id && <div className="w-3 h-3 rounded-full bg-[var(--text-link)]" />}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </fieldset>
               </div>
-              <div className="flex flex-wrap gap-2 pt-2">
-                {["Visa", "Mastercard", "IrisPay", "Orange Money", "MTN Mobile Money", "Wave"].map(p => (
-                  <span key={p} className="px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)]">{p}</span>
-                ))}
+
+              <div className="pt-2 border-t border-[var(--border)]">
+                <p className="text-sm font-medium text-[var(--text-primary)] mb-3">Paiement à la livraison</p>
+                <fieldset>
+                  <legend className="sr-only">Paiement à la livraison</legend>
+                  <div className="grid sm:grid-cols-1 gap-3">
+                    {CASH_METHODS.map((method) => {
+                      const Icon = method.icon
+                      return (
+                        <button
+                          key={method.id}
+                          onClick={() => updateForm("modePaiement", method.id)}
+                          className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                            form.modePaiement === method.id
+                              ? "border-[var(--border-hover)] bg-[var(--text-link)]/5"
+                              : "border-[var(--border)] hover:border-[var(--border-hover)]/20"
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                            form.modePaiement === method.id
+                              ? "bg-[var(--text-link)] text-white"
+                              : "bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
+                          }`}>
+                            <Icon className="w-5 h-5" aria-hidden="true" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-[var(--text-primary)]">{method.label}</p>
+                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{method.desc}</p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 ${
+                            form.modePaiement === method.id ? "border-[var(--border-hover)]" : "border-[var(--border)]"
+                          }`} aria-hidden="true">
+                            {form.modePaiement === method.id && <div className="w-3 h-3 rounded-full bg-[var(--text-link)]" />}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </fieldset>
               </div>
             </div>
+
             <div className="rounded-2xl border-2 border-[var(--border)] p-6 space-y-3">
               <h3 className="font-bold text-[var(--text-primary)]">Récapitulatif</h3>
               <div className="flex justify-between text-sm"><span className="text-[var(--text-secondary)]">Sous-total</span><span>{subtotal.toLocaleString("fr-FR")} F</span></div>
@@ -304,11 +450,27 @@ export default function CheckoutPage() {
               <hr className="border-[var(--border)]" />
               <div className="flex justify-between"><span className="font-bold text-[var(--text-primary)] text-lg">Total</span><span className="text-2xl font-bold text-[var(--text-link)]">{total.toLocaleString("fr-FR")} F</span></div>
             </div>
+
+            {form.modePaiement === "cash_on_delivery" ? (
+              <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
+                <p className="font-medium">Paiement à la livraison</p>
+                <p className="mt-1">Vous payez en espèces au livreur lors de la réception de votre commande. Aucun paiement en ligne requis.</p>
+              </div>
+            ) : form.modePaiement ? (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
+                <p className="font-medium flex items-center gap-2"><ExternalLink className="w-4 h-4" aria-hidden="true" /> Paiement sécurisé</p>
+                <p className="mt-1">Vous serez redirigé vers une page sécurisée pour effectuer le paiement. Aucune donnée bancaire n&apos;est stockée sur nos serveurs.</p>
+              </div>
+            ) : null}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setCurrentStep(1)}>Retour</Button>
               <Button size="lg" onClick={handlePlaceOrder} disabled={!canProceed() || loading}>
                 {loading ? <Loader className="w-5 h-5 animate-spin" aria-hidden="true" /> : null}
-                {loading ? "Traitement..." : "Confirmer et payer"}
+                {loading
+                  ? form.modePaiement === "cash_on_delivery" ? "Traitement..." : "Redirection vers le paiement..."
+                  : form.modePaiement === "cash_on_delivery" ? "Confirmer la commande" : `Payer ${total.toLocaleString("fr-FR")} F`
+                }
               </Button>
             </div>
           </AnimatedDiv>

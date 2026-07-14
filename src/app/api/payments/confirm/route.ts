@@ -38,7 +38,24 @@ export async function POST(request: Request) {
     if (!auth.success) return auth.response
 
     const body = await request.json()
-    const { transactionId, reference } = body
+    let { transactionId, reference } = body
+
+    if (!transactionId && !reference) {
+      if (body.paymentId) transactionId = body.paymentId
+      if (body.planId && body.type) {
+        const shop = await queryOne<any>(
+          "SELECT id FROM Shop WHERE sellerId = ? LIMIT 1",
+          [auth.user.userId]
+        )
+        if (shop) {
+          const txn = await queryOne<any>(
+            "SELECT id FROM `Transaction` WHERE shopId = ? AND type = ? AND status = 'pending' ORDER BY createdAt DESC LIMIT 1",
+            [shop.id, body.type]
+          )
+          if (txn) transactionId = txn.id
+        }
+      }
+    }
 
     if (!transactionId && !reference) {
       return NextResponse.json({ error: "transactionId ou reference est requis" }, { status: 400 })
@@ -53,6 +70,9 @@ export async function POST(request: Request) {
     }
 
     if (transaction.status !== "pending") {
+      if (transaction.status === "completed") {
+        return NextResponse.json({ success: true, transaction: { ...transaction, status: "completed" } })
+      }
       return NextResponse.json({ error: "Cette transaction a déjà été traitée" }, { status: 400 })
     }
 

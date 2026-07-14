@@ -3,6 +3,7 @@ import { queryOne, queryAll, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
 import { checkApiRateLimit } from "@/lib/rate-limit"
 import { generateId, type CampaignType } from "@/lib/ads"
+import { validateInput, adCampaignCreateSchema } from "@/lib/validations"
 
 export async function GET(request: Request) {
   try {
@@ -84,21 +85,14 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const {
-      shopId, name, type, objective, budget, startDate, endDate, dailyBudget,
+    const validation = validateInput(adCampaignCreateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+    const { shopId, name, type, objective, budget, startDate, endDate, dailyBudget,
       targetCountry, targetCity, targetCategory, productId,
       bannerImage, bannerUrl, placements: selectedPlacements,
-      isBooster, durationDays,
-    } = body
-
-    if (!shopId || !name || !type || !startDate || !endDate) {
-      return NextResponse.json({ error: "Champs obligatoires manquants" }, { status: 400 })
-    }
-
-    const validTypes: CampaignType[] = ["sponsored_product", "sponsored_shop", "banner", "event"]
-    if (!validTypes.includes(type)) {
-      return NextResponse.json({ error: "Type de campagne invalide" }, { status: 400 })
-    }
+      isBooster, durationDays } = validation.data
 
     const shop = await queryOne<any>("SELECT id, sellerId FROM Shop WHERE id = ?", [shopId])
     if (!shop || shop.sellerId !== auth.user.userId) {

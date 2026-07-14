@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { queryOne, queryAll, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
+import { validateInput, adCampaignUpdateSchema } from "@/lib/validations"
 import { checkApiRateLimit } from "@/lib/rate-limit"
 
 export async function GET(
@@ -72,6 +73,10 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
+    const validation = validateInput(adCampaignUpdateSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
 
     const campaign = await queryOne<any>("SELECT * FROM AdCampaign WHERE id = ?", [id])
     if (!campaign) {
@@ -84,22 +89,22 @@ export async function PUT(
 
     const updates: string[] = []
     const updateParams: unknown[] = []
-    const allowedFields = [
+    const allowedFields: (keyof typeof validation.data)[] = [
       "name", "objective", "budget", "dailyBudget", "startDate", "endDate",
       "targetCountry", "targetCity", "targetCategory", "productId",
       "bannerImage", "bannerUrl",
     ]
 
     for (const field of allowedFields) {
-      if (body[field] !== undefined) {
+      if (validation.data[field] !== undefined) {
         updates.push(`${field} = ?`)
-        updateParams.push(body[field])
+        updateParams.push(validation.data[field])
       }
     }
 
-    if (body.status && ["active", "paused", "cancelled"].includes(body.status)) {
+    if (validation.data.status && ["active", "paused", "cancelled"].includes(validation.data.status)) {
       updates.push("status = ?")
-      updateParams.push(body.status)
+      updateParams.push(validation.data.status)
     }
 
     if (updates.length > 0) {

@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server"
 import { queryOne, execute } from "@/lib/db"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { validateInput, adClickSchema } from "@/lib/validations"
 
 export async function POST(request: Request) {
   try {
-    const { campaignId, placementId, sessionId, userId } = await request.json()
+    const body = await request.json()
+    const validation = validateInput(adClickSchema, body)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+    const { campaignId, placementId, sessionId, userId } = validation.data
     const ip = request.headers.get("x-forwarded-for") || "unknown"
     const ua = request.headers.get("user-agent") || ""
-
-    if (!campaignId) {
-      return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 })
-    }
 
     const rateLimit = checkRateLimit(`ads-click:${ip}`, { windowMs: 60000, maxRequests: 30 })
     if (!rateLimit.allowed) {
