@@ -3,15 +3,17 @@
 import { useState, useEffect } from "react"
 import { DollarSign, ShoppingCart, Users, TrendingUp, Eye, ArrowUp, ArrowDown } from "lucide-react"
 import { AnimatedDiv } from "@/lib/animations"
+import { useAuth } from "@/lib/auth-context"
 
 export default function DashboardPage() {
+  const { getAuthHeaders } = useAuth()
   const [stats, setStats] = useState<any>(null)
   const [sellerStats, setSellerStats] = useState<any>(null)
   const [period, setPeriod] = useState("30d")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/vendeur/services-pro/dashboard?period=${period}`).then(r => r.json())
+    fetch(`/api/vendeur/services-pro/dashboard?period=${period}`, { headers: getAuthHeaders() }).then(r => r.json())
       .then(d => { setStats(d.stats); setSellerStats(d.sellerStats); setLoading(false) })
       .catch(() => setLoading(false))
   }, [period])

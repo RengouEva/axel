@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { Package, Upload, Copy, Bell, Calendar, GitBranch, Download } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
+import { useAuth } from "@/lib/auth-context"
 
 export default function ProductsPage() {
+  const { getAuthHeaders } = useAuth()
   const [tab, setTab] = useState("import")
   const [importData, setImportData] = useState("")
   const [variants, setVariants] = useState<any[]>([])
@@ -23,7 +25,7 @@ export default function ProductsPage() {
         return { name: cols[0]?.trim(), price: cols[1]?.trim(), brand: cols[2]?.trim(), category: cols[3]?.trim() }
       })
       const res = await fetch("/api/vendeur/services-pro/products/import", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ products, format: "csv" }),
       })
       const data = await res.json()
@@ -37,7 +39,7 @@ export default function ProductsPage() {
     if (!productId) { toast.error("ID produit requis"); return }
     try {
       const res = await fetch("/api/vendeur/services-pro/products/duplicate", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ productId: parseInt(productId) }),
       })
       const data = await res.json()
@@ -50,7 +52,7 @@ export default function ProductsPage() {
     if (!productId || !variantForm.name || !variantForm.value) { toast.error("Champs requis"); return }
     try {
       const res = await fetch("/api/vendeur/services-pro/products/variants", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ ...variantForm, productId: parseInt(productId), price: variantForm.price ? parseInt(variantForm.price) : undefined, stock: parseInt(variantForm.stock) }),
       })
       const data = await res.json()
@@ -62,7 +64,7 @@ export default function ProductsPage() {
 
   const loadVariants = async () => {
     if (!productId) return
-    const res = await fetch(`/api/vendeur/services-pro/products/variants?productId=${productId}`)
+    const res = await fetch(`/api/vendeur/services-pro/products/variants?productId=${productId}`, { headers: getAuthHeaders() })
     const data = await res.json()
     setVariants(data.variants || [])
   }
@@ -71,7 +73,7 @@ export default function ProductsPage() {
     if (!scheduleProductId || !scheduleDate) { toast.error("Champs requis"); return }
     try {
       const res = await fetch("/api/vendeur/services-pro/products/schedule", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ productId: parseInt(scheduleProductId), scheduledAt: scheduleDate }),
       })
       const data = await res.json()
@@ -84,7 +86,7 @@ export default function ProductsPage() {
     if (!alertProductId || !alertThreshold) { toast.error("Champs requis"); return }
     try {
       const res = await fetch("/api/vendeur/services-pro/products/stock-alerts", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ productId: parseInt(alertProductId), threshold: parseInt(alertThreshold) }),
       })
       const data = await res.json()

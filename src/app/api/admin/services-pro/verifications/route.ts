@@ -1,7 +1,7 @@
-"use server"
 import { NextResponse } from "next/server"
-import { queryAll, queryOne, execute } from "@/lib/db"
+import { queryAll, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
+import { approveVerification, rejectVerification } from "@/data/services-pro/verification"
 
 export async function GET(request: Request) {
   const auth = await requireRole(request, ["admin"])
@@ -51,14 +51,17 @@ export async function PUT(request: Request) {
     if (!id || !status) {
       return NextResponse.json({ error: "id et status requis" }, { status: 400 })
     }
-    if (!["approved", "rejected"].includes(status)) {
+
+    if (status === "approved") {
+      await approveVerification(id, auth.user.userId)
+    } else if (status === "rejected") {
+      if (!rejectionReason) {
+        return NextResponse.json({ error: "Motif de rejet requis" }, { status: 400 })
+      }
+      await rejectVerification(id, rejectionReason, auth.user.userId)
+    } else {
       return NextResponse.json({ error: "Status invalide" }, { status: 400 })
     }
-
-    await execute(
-      "UPDATE SellerVerification SET status = ?, rejectionReason = ?, reviewedAt = NOW() WHERE id = ?",
-      [status, rejectionReason || null, id]
-    )
     return NextResponse.json({ success: true })
   } catch (e: unknown) {
     const err = e as { message?: string }

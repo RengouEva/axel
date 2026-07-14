@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { MessageSquare, Send, Plus, Trash2 } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
+import { useAuth } from "@/lib/auth-context"
 
 export default function CommunicationPage() {
+  const { getAuthHeaders } = useAuth()
   const [tab, setTab] = useState("messages")
   const [messages, setMessages] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -16,9 +18,9 @@ export default function CommunicationPage() {
 
   const loadData = async () => {
     const [msgData, tmplData, autoData] = await Promise.all([
-      fetch("/api/vendeur/services-pro/messaging").then(r => r.json()),
-      fetch("/api/vendeur/services-pro/messaging/templates").then(r => r.json()),
-      fetch("/api/vendeur/services-pro/messaging/auto-replies").then(r => r.json()),
+      fetch("/api/vendeur/services-pro/messaging", { headers: getAuthHeaders() }).then(r => r.json()),
+      fetch("/api/vendeur/services-pro/messaging/templates", { headers: getAuthHeaders() }).then(r => r.json()),
+      fetch("/api/vendeur/services-pro/messaging/auto-replies", { headers: getAuthHeaders() }).then(r => r.json()),
     ])
     setMessages(msgData.messages || [])
     setUnreadCount(msgData.unreadCount || 0)
@@ -31,10 +33,12 @@ export default function CommunicationPage() {
   const handleReply = async () => {
     if (!selectedMsg || !replyText) return
     const res = await fetch("/api/vendeur/services-pro/messaging", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify({ action: "reply", messageId: selectedMsg, message: replyText }),
     })
-    if (res.ok) { toast.success("Réponse envoyée"); setReplyText(""); loadData() }
+    const data = await res.json()
+    if (!res.ok) { toast.error(data.error || "Erreur lors de l'envoi"); return }
+    toast.success("Réponse envoyée"); setReplyText(""); loadData()
   }
 
   const tabs = [
@@ -95,12 +99,15 @@ export default function CommunicationPage() {
 }
 
 function TemplatesSection({ templates, onUpdate }: { templates: any[]; onUpdate: () => void }) {
+  const { getAuthHeaders } = useAuth()
   const [form, setForm] = useState({ name: "", subject: "", body: "", category: "general" })
   const create = async () => {
     const res = await fetch("/api/vendeur/services-pro/messaging/templates", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+      method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() }, body: JSON.stringify(form),
     })
-    if (res.ok) { toast.success("Modèle créé"); setForm({ name: "", subject: "", body: "", category: "general" }); onUpdate() }
+    const data = await res.json()
+    if (!res.ok) { toast.error(data.error || "Erreur"); return }
+    toast.success("Modèle créé"); setForm({ name: "", subject: "", body: "", category: "general" }); onUpdate()
   }
   return (
     <div className="space-y-4">
@@ -121,12 +128,15 @@ function TemplatesSection({ templates, onUpdate }: { templates: any[]; onUpdate:
 }
 
 function AutoRepliesSection({ autoReplies, onUpdate }: { autoReplies: any[]; onUpdate: () => void }) {
+  const { getAuthHeaders } = useAuth()
   const [form, setForm] = useState({ keyword: "", replyMessage: "", matchType: "contains" })
   const create = async () => {
     const res = await fetch("/api/vendeur/services-pro/messaging/auto-replies", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+      method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() }, body: JSON.stringify(form),
     })
-    if (res.ok) { toast.success("Réponse auto créée"); setForm({ keyword: "", replyMessage: "", matchType: "contains" }); onUpdate() }
+    const data = await res.json()
+    if (!res.ok) { toast.error(data.error || "Erreur"); return }
+    toast.success("Réponse auto créée"); setForm({ keyword: "", replyMessage: "", matchType: "contains" }); onUpdate()
   }
   return (
     <div className="space-y-4">

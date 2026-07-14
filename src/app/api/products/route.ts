@@ -90,7 +90,7 @@ export async function GET(request: Request) {
     }
     const whereSQL = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : ""
 
-    let orderBySQL = "ORDER BY p.id ASC"
+    let orderBySQL = "ORDER BY p.id DESC"
     if (sort === "price-asc") orderBySQL = "ORDER BY p.price ASC"
     else if (sort === "price-desc") orderBySQL = "ORDER BY p.price DESC"
     else if (sort === "rating") orderBySQL = "ORDER BY p.rating DESC"

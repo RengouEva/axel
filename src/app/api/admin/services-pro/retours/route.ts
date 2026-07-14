@@ -1,7 +1,7 @@
-"use server"
 import { NextResponse } from "next/server"
-import { queryAll, queryOne, execute } from "@/lib/db"
+import { queryAll, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"
+import { updateReturnRequest } from "@/data/services-pro/orders"
 
 export async function GET(request: Request) {
   const auth = await requireRole(request, ["admin"])
@@ -48,7 +48,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json()
-    const { id, status, notes } = body
+    const { id, status, refundAmount, refundMethod, notes } = body
     if (!id || !status) {
       return NextResponse.json({ error: "id et status requis" }, { status: 400 })
     }
@@ -56,18 +56,13 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Status invalide" }, { status: 400 })
     }
 
-    const updateFields = ["status = ?"]
-    const updateParams: unknown[] = [status]
-
-    if (notes) { updateFields.push("notes = ?"); updateParams.push(notes) }
-    if (status === "refunded") { updateFields.push("refundedAt = NOW()") }
-    if (["approved", "rejected"].includes(status)) { updateFields.push("reviewedAt = NOW()") }
-
-    updateParams.push(id)
-    await execute(
-      `UPDATE ReturnRequest SET ${updateFields.join(", ")} WHERE id = ?`,
-      updateParams
-    )
+    await updateReturnRequest(id, {
+      status,
+      reviewedBy: auth.user.userId,
+      refundAmount: refundAmount || undefined,
+      refundMethod: refundMethod || undefined,
+      notes: notes || undefined,
+    })
     return NextResponse.json({ success: true })
   } catch (e: unknown) {
     const err = e as { message?: string }

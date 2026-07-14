@@ -1,4 +1,3 @@
-"use server"
 import { NextResponse } from "next/server"
 import { queryAll, queryOne, execute } from "@/lib/db"
 import { requireRole } from "@/lib/require-auth"

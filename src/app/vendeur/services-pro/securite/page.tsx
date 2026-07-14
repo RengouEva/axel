@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Lock, Smartphone, Users, History, Shield, Save } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Lock, Smartphone, Users, History, Shield, Save, AlertTriangle } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
+import { useAuth } from "@/lib/auth-context"
 
 export default function SecurityPage() {
+  const { getAuthHeaders } = useAuth()
   const [tab, setTab] = useState("settings")
   const [security, setSecurity] = useState<any>(null)
   const [team, setTeam] = useState<any[]>([])
@@ -17,26 +19,43 @@ export default function SecurityPage() {
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteRole, setInviteRole] = useState("editor")
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/vendeur/services-pro/security").then(r => r.json()),
-      fetch("/api/vendeur/services-pro/security/team").then(r => r.json()),
-      fetch("/api/vendeur/services-pro/security/logs?type=actions").then(r => r.json()),
-      fetch("/api/vendeur/services-pro/security/logs?type=logins").then(r => r.json()),
-    ]).then(([sec, tm, logs, logins]) => {
+  const loadAll = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [sec, tm, logs, logins] = await Promise.all([
+        fetch("/api/vendeur/services-pro/security", { headers: getAuthHeaders() }).then(r => r.json()),
+        fetch("/api/vendeur/services-pro/security/team", { headers: getAuthHeaders() }).then(r => r.json()),
+        fetch("/api/vendeur/services-pro/security/logs?type=actions", { headers: getAuthHeaders() }).then(r => r.json()),
+        fetch("/api/vendeur/services-pro/security/logs?type=logins", { headers: getAuthHeaders() }).then(r => r.json()),
+      ])
       setSecurity(sec.security || {})
       setTwoFactorEnabled(sec.security?.twoFactorEnabled || false)
       setSessionTimeout(String(sec.security?.sessionTimeout || 60))
       setTeam(tm.members || [])
       setActionLogs(logs.logs || [])
       setLoginLogs(logins.logs || [])
+    } catch {
+      toast.error("Erreur lors du chargement")
+    } finally {
       setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [])
+    }
+  }, [getAuthHeaders])
+
+  useEffect(() => { loadAll() }, [loadAll])
+
+  const securityScore = (() => {
+    let score = 0
+    if (twoFactorEnabled) score += 40
+    score += Math.min(team.length * 10, 30)
+    return Math.max(0, Math.min(100, score))
+  })()
+
+  const scoreColor = securityScore >= 70 ? "text-green-400" : securityScore >= 40 ? "text-orange-400" : "text-red-400"
+  const scoreBg = securityScore >= 70 ? "bg-green-500/10 border-green-500/20" : securityScore >= 40 ? "bg-orange-500/10 border-orange-500/20" : "bg-red-500/10 border-red-500/20"
 
   const saveSecurity = async () => {
     const res = await fetch("/api/vendeur/services-pro/security", {
-      method: "PUT", headers: { "Content-Type": "application/json" },
+      method: "PUT", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify({ twoFactorEnabled, sessionTimeout: parseInt(sessionTimeout) }),
     })
     const data = await res.json()
@@ -49,18 +68,21 @@ export default function SecurityPage() {
 
   const inviteMember = async () => {
     const res = await fetch("/api/vendeur/services-pro/security/team", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
     })
     const data = await res.json()
     if (!res.ok) { toast.error(data.error); return }
     toast.success("Membre invité")
     setInviteEmail("")
+    loadAll()
   }
 
   const removeMember = async (id: number) => {
-    await fetch(`/api/vendeur/services-pro/security/team?id=${id}`, { method: "DELETE" })
+    const res = await fetch(`/api/vendeur/services-pro/security/team?id=${id}`, { method: "DELETE", headers: getAuthHeaders() })
+    if (!res.ok) { try { const d = await res.json(); toast.error(d.error || "Erreur") } catch { toast.error("Erreur") } return }
     toast.success("Membre retiré")
+    loadAll()
   }
 
   const tabs = [
@@ -79,6 +101,19 @@ export default function SecurityPage() {
           <div>
             <h1 className="text-2xl font-bold text-[var(--text-primary)]">Sécurité</h1>
             <p className="text-sm text-[var(--text-secondary)]">Protection avancée de votre compte et équipe</p>
+          </div>
+        </div>
+
+        <div className={`p-5 rounded-2xl border-2 ${scoreBg} mb-6 flex items-center justify-between`}>
+          <div className="flex items-center gap-3">
+            <Shield className={`w-8 h-8 ${scoreColor}`} />
+            <div>
+              <p className="font-bold text-[var(--text-primary)]">Score de sécurité</p>
+              <p className="text-xs text-[var(--text-secondary)]">Basé sur 2FA et taille de l'équipe</p>
+            </div>
+          </div>
+          <div className={`w-16 h-16 rounded-full border-4 flex items-center justify-center font-bold text-lg ${scoreColor}`} style={{ borderColor: securityScore >= 70 ? "#10B981" : securityScore >= 40 ? "#F97316" : "#EF4444" }}>
+            {securityScore}
           </div>
         </div>
 

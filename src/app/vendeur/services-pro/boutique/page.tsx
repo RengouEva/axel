@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { Store, Save } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
+import { useAuth } from "@/lib/auth-context"
 
 export default function ShopPage() {
+  const { getAuthHeaders } = useAuth()
   const [shop, setShop] = useState<any>(null)
   const [settings, setSettings] = useState<any>({})
   const [loading, setLoading] = useState(true)
@@ -14,7 +16,7 @@ export default function ShopPage() {
   const [hours, setHours] = useState<Record<string, { open: string; close: string }>>({})
 
   useEffect(() => {
-    fetch("/api/vendeur/services-pro/shop/branding").then(r => r.json())
+    fetch("/api/vendeur/services-pro/shop/branding", { headers: getAuthHeaders() }).then(r => r.json())
       .then(d => {
         setShop(d.shop)
         setSettings(d.settings || {})
@@ -28,7 +30,7 @@ export default function ShopPage() {
     setSaving(true)
     try {
       const res = await fetch("/api/vendeur/services-pro/shop/branding", {
-        method: "PUT", headers: { "Content-Type": "application/json" },
+        method: "PUT", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({
           ...form, settings: {
             hours, deliveryPolicy: settings.deliveryPolicy, returnPolicy: settings.returnPolicy,

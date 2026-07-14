@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { ShoppingCart, FileText, RotateCcw, Search } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
+import { useAuth } from "@/lib/auth-context"
 
 const statusLabels: Record<string, string> = {
   pending: "En attente", processing: "En cours", shipped: "Expédié",
@@ -11,6 +12,7 @@ const statusLabels: Record<string, string> = {
 }
 
 export default function OrdersPage() {
+  const { getAuthHeaders } = useAuth()
   const [orders, setOrders] = useState<any[]>([])
   const [returns, setReturns] = useState<any[]>([])
   const [tab, setTab] = useState("orders")
@@ -19,8 +21,8 @@ export default function OrdersPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/vendeur/services-pro/orders/returns").then(r => r.json()),
-      fetch("/api/orders").then(r => r.json()),
+      fetch("/api/vendeur/services-pro/orders/returns", { headers: getAuthHeaders() }).then(r => r.json()),
+      fetch("/api/vendeur/services-pro/orders", { headers: getAuthHeaders() }).then(r => r.json()),
     ]).then(([retData, ordData]) => {
       setReturns(retData.returns || [])
       setOrders(ordData.orders || [])
@@ -31,7 +33,7 @@ export default function OrdersPage() {
   const handleReturnAction = async (id: string, status: string, refundAmount?: number) => {
     try {
       const res = await fetch("/api/vendeur/services-pro/orders/returns", {
-        method: "PUT", headers: { "Content-Type": "application/json" },
+        method: "PUT", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ requestId: id, status, refundAmount: refundAmount || 0 }),
       })
       const data = await res.json()
@@ -41,7 +43,7 @@ export default function OrdersPage() {
   }
 
   const handleInvoice = async (orderId: string) => {
-    const res = await fetch(`/api/vendeur/services-pro/orders/invoices?orderId=${orderId}`)
+    const res = await fetch(`/api/vendeur/services-pro/orders/invoices?orderId=${orderId}`, { headers: getAuthHeaders() })
     const data = await res.json()
     if (data.invoice) {
       toast.success("Facture générée")

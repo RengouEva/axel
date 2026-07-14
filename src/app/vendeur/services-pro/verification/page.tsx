@@ -4,15 +4,17 @@ import { useState, useEffect } from "react"
 import { ShieldCheck, Upload, CheckCircle, XCircle, Clock } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
+import { useAuth } from "@/lib/auth-context"
 
 export default function VerificationPage() {
+  const { getAuthHeaders } = useAuth()
   const [verification, setVerification] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({ verificationType: "individual", idType: "CNI", idNumber: "", businessRegNumber: "", taxId: "" })
 
   useEffect(() => {
-    fetch("/api/vendeur/services-pro/verification").then(r => r.json())
+    fetch("/api/vendeur/services-pro/verification", { headers: getAuthHeaders() }).then(r => r.json())
       .then(d => { setVerification(d.verification); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
@@ -22,7 +24,7 @@ export default function VerificationPage() {
     setSubmitting(true)
     try {
       const res = await fetch("/api/vendeur/services-pro/verification", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify(form),
       })
       const data = await res.json()

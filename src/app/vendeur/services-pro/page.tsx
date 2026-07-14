@@ -15,7 +15,7 @@ const modules = [
   { icon: BarChart3, label: "Rapports", desc: "Export PDF, Excel, CSV", href: "/vendeur/services-pro/rapports", color: "#6366F1" },
   { icon: Key, label: "API", desc: "Connexion ERP, CRM", href: "/vendeur/services-pro/api", color: "#F97316" },
   { icon: Brain, label: "IA", desc: "Recommandations intelligentes", href: "/vendeur/services-pro/ia", color: "#A855F7" },
-  { icon: Bell, label: "Notifications", desc: "Alertes en temps réel", href: "/vendeur/services-pro", color: "#0EA5E9" },
+  { icon: Bell, label: "Notifications", desc: "Alertes en temps réel", href: "/vendeur/services-pro/notifications", color: "#0EA5E9" },
   { icon: Lock, label: "Sécurité", desc: "2FA, logs, équipe", href: "/vendeur/services-pro/securite", color: "#64748B" },
 ]
 

@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { Brain, Lightbulb, TrendingUp, Sparkles, Check, X } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
+import { useAuth } from "@/lib/auth-context"
 
 export default function AiPage() {
+  const { getAuthHeaders } = useAuth()
   const [recommendations, setRecommendations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
@@ -13,7 +15,7 @@ export default function AiPage() {
 
   const loadRecs = async () => {
     const url = filter ? `/api/vendeur/services-pro/ai?type=${filter}` : "/api/vendeur/services-pro/ai"
-    const res = await fetch(url).then(r => r.json())
+    const res = await fetch(url, { headers: getAuthHeaders() }).then(r => r.json())
     setRecommendations(res.recommendations || [])
     setLoading(false)
   }
@@ -24,7 +26,7 @@ export default function AiPage() {
     setAnalyzing(true)
     try {
       const res = await fetch("/api/vendeur/services-pro/ai", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ action: "analyze_product" }),
       })
       const data = await res.json()
@@ -36,7 +38,7 @@ export default function AiPage() {
 
   const handleAction = async (id: number, action: string) => {
     const res = await fetch("/api/vendeur/services-pro/ai", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify({ action, id }),
     })
     const data = await res.json()

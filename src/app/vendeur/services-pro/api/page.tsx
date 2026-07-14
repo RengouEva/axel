@@ -4,15 +4,17 @@ import { useState, useEffect } from "react"
 import { Key, Plus, Trash2, Copy, Eye, EyeOff } from "lucide-react"
 import Button from "@/components/ui/button"
 import toast from "react-hot-toast"
+import { useAuth } from "@/lib/auth-context"
 
 export default function ApiPage() {
+  const { getAuthHeaders } = useAuth()
   const [keys, setKeys] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [newKey, setNewKey] = useState<{ rawKey: string; name: string } | null>(null)
   const [form, setForm] = useState({ name: "", permissions: ["products:read"] as string[], rateLimit: "100" })
 
   const loadKeys = async () => {
-    const res = await fetch("/api/vendeur/services-pro/api-keys").then(r => r.json())
+    const res = await fetch("/api/vendeur/services-pro/api-keys", { headers: getAuthHeaders() }).then(r => r.json())
     setKeys(res.keys || [])
     setLoading(false)
   }
@@ -21,7 +23,7 @@ export default function ApiPage() {
 
   const createKey = async () => {
     const res = await fetch("/api/vendeur/services-pro/api-keys", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify({ ...form, rateLimit: parseInt(form.rateLimit) }),
     })
     const data = await res.json()
@@ -32,7 +34,8 @@ export default function ApiPage() {
   }
 
   const deleteKey = async (id: string) => {
-    await fetch(`/api/vendeur/services-pro/api-keys?id=${id}`, { method: "DELETE" })
+    const res = await fetch(`/api/vendeur/services-pro/api-keys?id=${id}`, { method: "DELETE", headers: getAuthHeaders() })
+    if (!res.ok) { try { const d = await res.json(); toast.error(d.error || "Erreur") } catch { toast.error("Erreur") } return }
     toast.success("Clé supprimée")
     loadKeys()
   }
@@ -76,7 +79,7 @@ export default function ApiPage() {
               {allPermissions.map(p => (
                 <label key={p} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] text-xs text-[var(--text-primary)] cursor-pointer">
                   <input type="checkbox" checked={form.permissions.includes(p)} onChange={e => {
-                    setForm(f => ({ ...f, permissions: e.target.checked ? [...f.permissions, p] : f.permissions.filter(x => x !== p) }))
+                    setForm(f => ({ ...f, permissions: e.target.checked ? [...f.permissions, p] : f.permissions.filter(x => x !== p) })
                   }} className="accent-[var(--text-link)]" />
                   {p}
                 </label>

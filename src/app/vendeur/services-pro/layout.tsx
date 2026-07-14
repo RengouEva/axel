@@ -20,7 +20,7 @@ const navItems = [
   { icon: BarChart3, label: "Rapports", href: "/vendeur/services-pro/rapports" },
   { icon: Key, label: "API", href: "/vendeur/services-pro/api" },
   { icon: Brain, label: "IA", href: "/vendeur/services-pro/ia" },
-  { icon: Bell, label: "Notifications", href: "/vendeur/services-pro" },
+  { icon: Bell, label: "Notifications", href: "/vendeur/services-pro/notifications" },
   { icon: Lock, label: "Sécurité", href: "/vendeur/services-pro/securite" },
 ]
 
