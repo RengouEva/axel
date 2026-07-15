@@ -50,26 +50,40 @@ export default function CreateCampaignPage() {
 
   useEffect(() => {
     if (!user) return
-    fetch("/api/shops", { headers: getAuthHeaders() })
-      .then(r => r.json())
-      .then((shopsData) => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const shopsRes = await fetch("/api/shops", { headers: getAuthHeaders() })
+        const shopsData = await shopsRes.json()
+        if (cancelled) return
         const shopsList = Array.isArray(shopsData) ? shopsData : (shopsData.shops || [])
         setShops(shopsList)
         if (shopsList.length > 0) {
           setForm(prev => ({ ...prev, shopId: shopsList[0].id }))
         }
-      })
-      .finally(() => setLoading(false))
+      } catch (err) {
+        console.error("[CAMPAGNE_CREER] Erreur chargement:", err)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
   }, [user, getAuthHeaders])
 
   useEffect(() => {
     if (!form.shopId || !user) return
+    const shopId = form.shopId
     setProducts([])
-    fetch(`/api/products?shopId=${form.shopId}&organic=false`, { headers: getAuthHeaders() })
-      .then(r => r.json())
-      .then((data) => {
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/products?shopId=${shopId}&organic=false`, { headers: getAuthHeaders() })
+        const data = await res.json()
+        if (form.shopId !== shopId) return
         setProducts(Array.isArray(data) ? data : (data.products || []))
-      })
+      } catch (err) {
+        console.error("[CAMPAGNE_CREER] Erreur produits:", err)
+      }
+    })()
   }, [form.shopId, user, getAuthHeaders])
 
   const getAiRecommendation = async () => {
