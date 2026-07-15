@@ -4,6 +4,7 @@ export { hasCreditRates } from "./product-types"
 import { queryAll, queryOne } from "@/lib/db"
 import { cached } from "@/lib/cache"
 import { getOrganicProducts, batchCalculateScores, normalizeScores, applyRotation } from "./organic-ranking"
+import { getShopBySlug } from "./shops"
 
 const BADGE_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   premium: { label: "Premium", color: "#FFD700", icon: "crown" },
@@ -195,8 +196,10 @@ export async function getRankedProductsByCategory(categoryName: string): Promise
 }
 
 export async function getRankedProductsByShop(shopSlug: string): Promise<Product[]> {
+  const shop = await getShopBySlug(shopSlug)
+  if (!shop) return []
   const params = new URLSearchParams()
-  params.set("shopId", shopSlug)
+  params.set("shopId", shop.id)
   params.set("limit", "50")
 
   const result = await getOrganicProducts(params, 1, 50)

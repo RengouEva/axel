@@ -50,19 +50,27 @@ export default function CreateCampaignPage() {
 
   useEffect(() => {
     if (!user) return
-    Promise.all([
-      fetch("/api/shops", { headers: getAuthHeaders() }).then(r => r.json()),
-      fetch(`/api/products?sellerId=${user.id}&organic=false`, { headers: getAuthHeaders() }).then(r => r.json()),
-    ]).then(([shopsData, productsData]) => {
-      const shopsList = Array.isArray(shopsData) ? shopsData : (shopsData.shops || [])
-      const productsList = Array.isArray(productsData) ? productsData : (productsData.products || [])
-      setShops(shopsList)
-      setProducts(productsList)
-      if (shopsList.length > 0) {
-        setForm(prev => ({ ...prev, shopId: shopsList[0].id }))
-      }
-    }).finally(() => setLoading(false))
+    fetch("/api/shops", { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then((shopsData) => {
+        const shopsList = Array.isArray(shopsData) ? shopsData : (shopsData.shops || [])
+        setShops(shopsList)
+        if (shopsList.length > 0) {
+          setForm(prev => ({ ...prev, shopId: shopsList[0].id }))
+        }
+      })
+      .finally(() => setLoading(false))
   }, [user, getAuthHeaders])
+
+  useEffect(() => {
+    if (!form.shopId || !user) return
+    setProducts([])
+    fetch(`/api/products?shopId=${form.shopId}&organic=false`, { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then((data) => {
+        setProducts(Array.isArray(data) ? data : (data.products || []))
+      })
+  }, [form.shopId, user, getAuthHeaders])
 
   const getAiRecommendation = async () => {
     setAiLoading(true)

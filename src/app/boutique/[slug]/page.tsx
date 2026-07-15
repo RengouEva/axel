@@ -8,12 +8,8 @@ export default async function BoutiquePage({ params }: { params: Promise<{ slug:
   const { slug } = await params
   const shop = await getShopBySlug(slug)
   if (!shop) notFound()
-  let products = [] as Awaited<ReturnType<typeof getProductsByShop>>
-  try {
-    products = await getRankedProductsByShop(slug)
-  } catch {
-    products = await getProductsByShop(slug)
-  }
+  const ranked = await getRankedProductsByShop(slug).catch(() => null)
+  let products = ranked && ranked.length > 0 ? ranked : await getProductsByShop(slug)
   const [countries, cities, districts] = await Promise.all([
     getCountries(),
     getCities(),

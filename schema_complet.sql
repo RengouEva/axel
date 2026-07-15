@@ -1,0 +1,766 @@
+CREATE TABLE IF NOT EXISTS User (
+id INT AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+email VARCHAR(255) NOT NULL UNIQUE,
+password VARCHAR(255) NOT NULL,
+role VARCHAR(50) DEFAULT 'client',
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_email (email),
+INDEX idx_role (role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS Category (
+id INT AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+slug VARCHAR(255) NOT NULL UNIQUE,
+icon VARCHAR(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS Country (
+id VARCHAR(10) PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+flag VARCHAR(10) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS City (
+id VARCHAR(20) PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+countryId VARCHAR(10) NOT NULL,
+x INT NOT NULL DEFAULT 0,
+y INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS District (
+id VARCHAR(20) PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+cityId VARCHAR(20) NOT NULL,
+x INT NOT NULL DEFAULT 0,
+y INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS Shop (
+id VARCHAR(50) PRIMARY KEY,
+sellerId INT NOT NULL UNIQUE,
+name VARCHAR(255) NOT NULL,
+slug VARCHAR(255) NOT NULL UNIQUE,
+description TEXT,
+phone VARCHAR(50),
+email VARCHAR(255),
+logo VARCHAR(500) DEFAULT '/images/shops/default.svg',
+coverImage VARCHAR(500) DEFAULT '/images/shops/default-cover.svg',
+countryId VARCHAR(10) NOT NULL,
+cityId VARCHAR(20),
+districtId VARCHAR(20),
+address VARCHAR(500),
+category VARCHAR(100) DEFAULT '',
+rating FLOAT DEFAULT 0,
+totalSales INT DEFAULT 0,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_category (category),
+FOREIGN KEY (sellerId) REFERENCES User(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS Product (
+id INT AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+brand VARCHAR(255) NOT NULL,
+category VARCHAR(100) NOT NULL,
+price INT NOT NULL,
+monthlyPrice INT NOT NULL DEFAULT 0,
+rating FLOAT DEFAULT 0,
+reviews INT DEFAULT 0,
+inStock TINYINT(1) DEFAULT 1,
+promotion TINYINT(1) DEFAULT 0,
+description TEXT,
+image VARCHAR(500) NOT NULL,
+images TEXT,
+creditRates TEXT,
+slug VARCHAR(255) NOT NULL UNIQUE,
+shopId VARCHAR(50),
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_category (category),
+INDEX idx_brand (brand),
+INDEX idx_slug (slug),
+INDEX idx_shopId (shopId),
+FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `Order` (
+id VARCHAR(50) PRIMARY KEY,
+date DATETIME DEFAULT CURRENT_TIMESTAMP,
+status VARCHAR(50) DEFAULT 'pending',
+total INT NOT NULL,
+userId INT NOT NULL,
+shippingName VARCHAR(255),
+shippingEmail VARCHAR(255),
+shippingPhone VARCHAR(50),
+shippingAddress TEXT,
+countryId VARCHAR(10),
+cityId VARCHAR(20),
+districtId VARCHAR(20),
+deliveryMethod VARCHAR(50),
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_userId (userId),
+INDEX idx_status (status),
+INDEX idx_createdAt (createdAt),
+FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS OrderItem (
+id INT AUTO_INCREMENT PRIMARY KEY,
+orderId VARCHAR(50) NOT NULL,
+productId INT NOT NULL,
+name VARCHAR(255) NOT NULL,
+quantity INT NOT NULL,
+price INT NOT NULL,
+INDEX idx_orderId (orderId),
+INDEX idx_productId (productId),
+FOREIGN KEY (orderId) REFERENCES `Order`(id) ON DELETE CASCADE,
+FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS Plan (
+id INT AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+slug VARCHAR(255) NOT NULL UNIQUE,
+description TEXT,
+price INT NOT NULL,
+durationDays INT NOT NULL,
+maxBoosts INT DEFAULT 0,
+hasPremiumBadge TINYINT(1) DEFAULT 0,
+hasVerifiedBadge TINYINT(1) DEFAULT 0,
+hasFeaturedBadge TINYINT(1) DEFAULT 0,
+boostPrice INT DEFAULT 0,
+isActive TINYINT(1) DEFAULT 1,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ShopSubscription (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL,
+planId INT NOT NULL,
+startDate DATETIME NOT NULL,
+endDate DATETIME NOT NULL,
+status VARCHAR(50) DEFAULT 'active',
+autoRenew TINYINT(1) DEFAULT 0,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId),
+INDEX idx_status (status),
+FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
+FOREIGN KEY (planId) REFERENCES Plan(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ProductBoost (
+id VARCHAR(50) PRIMARY KEY,
+productId INT NOT NULL,
+shopId VARCHAR(50),
+startDate DATETIME NOT NULL,
+endDate DATETIME NOT NULL,
+status VARCHAR(50) DEFAULT 'active',
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_productId (productId),
+INDEX idx_shopId (shopId),
+INDEX idx_status (status),
+FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE,
+FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS Transaction (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50),
+userId INT,
+amount INT NOT NULL,
+currency VARCHAR(10) DEFAULT 'XAF',
+type VARCHAR(50) NOT NULL,
+status VARCHAR(50) DEFAULT 'pending',
+reference VARCHAR(255),
+metadata TEXT,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId),
+INDEX idx_status (status),
+INDEX idx_createdAt (createdAt),
+FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE SET NULL,
+FOREIGN KEY (userId) REFERENCES User(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ShopBadge (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL,
+type VARCHAR(50) NOT NULL,
+label VARCHAR(255) NOT NULL,
+color VARCHAR(50) NOT NULL,
+icon VARCHAR(100),
+assignedBy VARCHAR(50) DEFAULT 'system',
+assignedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+expiresAt DATETIME,
+INDEX idx_shopId (shopId),
+INDEX idx_type (type),
+FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS TaxRate (
+id INT AUTO_INCREMENT PRIMARY KEY,
+countryId VARCHAR(10) NOT NULL UNIQUE,
+rate FLOAT NOT NULL,
+label VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS DeliveryPerson (
+id VARCHAR(50) PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+phone VARCHAR(50) NOT NULL,
+email VARCHAR(255) NOT NULL,
+avatar VARCHAR(500),
+countryId VARCHAR(10) NOT NULL,
+cityId VARCHAR(20),
+districtId VARCHAR(20),
+available TINYINT(1) DEFAULT 1,
+rating FLOAT DEFAULT 0,
+kycStatus VARCHAR(50) DEFAULT 'pending',
+missionsCount INT DEFAULT 0,
+coordinates TEXT,
+userId INT,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_cityId (cityId),
+INDEX idx_available (available),
+FOREIGN KEY (userId) REFERENCES User(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS DeliveryMission (
+id VARCHAR(50) PRIMARY KEY,
+orderId VARCHAR(50) NOT NULL UNIQUE,
+deliveryPersonId VARCHAR(50),
+countryId VARCHAR(10) NOT NULL,
+cityId VARCHAR(20),
+districtId VARCHAR(20),
+status VARCHAR(50) DEFAULT 'pending',
+pickupAddress TEXT,
+deliveryAddress TEXT,
+customerName VARCHAR(255),
+customerPhone VARCHAR(50),
+assignedAt DATETIME,
+completedAt DATETIME,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_deliveryPersonId (deliveryPersonId),
+INDEX idx_status (status),
+INDEX idx_cityId (cityId),
+FOREIGN KEY (deliveryPersonId) REFERENCES DeliveryPerson(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ProductStock (
+id INT AUTO_INCREMENT PRIMARY KEY,
+productId INT NOT NULL,
+countryId VARCHAR(10) NOT NULL,
+cityId VARCHAR(20) NOT NULL,
+districtId VARCHAR(20) NOT NULL,
+quantity INT DEFAULT 0,
+INDEX idx_productId (productId),
+FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS Favorite (
+id INT AUTO_INCREMENT PRIMARY KEY,
+userId INT NOT NULL,
+productId INT NOT NULL,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+UNIQUE KEY uk_user_product (userId, productId),
+INDEX idx_userId (userId),
+INDEX idx_productId (productId),
+FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ContactMessage (
+id INT AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+email VARCHAR(255) NOT NULL,
+subject VARCHAR(255) NOT NULL,
+message TEXT NOT NULL,
+isRead TINYINT(1) DEFAULT 0,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_isRead (isRead),
+INDEX idx_createdAt (createdAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS CreditRequest (
+id VARCHAR(50) PRIMARY KEY,
+userId INT NOT NULL,
+productId INT NOT NULL,
+shopId VARCHAR(50) NOT NULL,
+status VARCHAR(50) DEFAULT 'pending',
+amountRequested INT NOT NULL,
+creditDuration INT NOT NULL,
+monthlyPayment INT NOT NULL,
+creditRate FLOAT DEFAULT 0,
+reviewedBy INT,
+reviewNotes TEXT,
+reviewedAt DATETIME,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_userId (userId),
+INDEX idx_status (status),
+INDEX idx_shopId (shopId),
+INDEX idx_createdAt (createdAt),
+FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
+FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE,
+FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE,
+FOREIGN KEY (reviewedBy) REFERENCES User(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS Guarantor (
+id VARCHAR(50) PRIMARY KEY,
+creditRequestId VARCHAR(50) NOT NULL,
+name VARCHAR(255) NOT NULL,
+phone VARCHAR(50) NOT NULL,
+email VARCHAR(255),
+countryId VARCHAR(10) NOT NULL,
+cityId VARCHAR(20) NOT NULL,
+districtId VARCHAR(20) NOT NULL,
+address VARCHAR(500),
+idType VARCHAR(50) NOT NULL,
+idDocument VARCHAR(500),
+relationship VARCHAR(50) NOT NULL,
+status VARCHAR(50) DEFAULT 'pending',
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_creditRequestId (creditRequestId),
+FOREIGN KEY (creditRequestId) REFERENCES CreditRequest(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AdCampaign (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL,
+userId INT NOT NULL,
+name VARCHAR(255) NOT NULL,
+type VARCHAR(50) NOT NULL DEFAULT 'sponsored_product',
+objective VARCHAR(100) DEFAULT 'visibility',
+status VARCHAR(50) NOT NULL DEFAULT 'draft',
+budget INT NOT NULL DEFAULT 0,
+spent INT NOT NULL DEFAULT 0,
+startDate DATETIME NOT NULL,
+endDate DATETIME NOT NULL,
+dailyBudget INT DEFAULT 0,
+targetCountry VARCHAR(10),
+targetCity VARCHAR(20),
+targetDistrict VARCHAR(20),
+targetCategory VARCHAR(100),
+productId INT,
+bannerImage VARCHAR(500),
+bannerUrl VARCHAR(500),
+impressions INT NOT NULL DEFAULT 0,
+clicks INT NOT NULL DEFAULT 0,
+ctr FLOAT NOT NULL DEFAULT 0,
+avgCpc INT NOT NULL DEFAULT 0,
+avgCpm INT NOT NULL DEFAULT 0,
+cartAdds INT NOT NULL DEFAULT 0,
+sales INT NOT NULL DEFAULT 0,
+conversionRate FLOAT NOT NULL DEFAULT 0,
+roi FLOAT NOT NULL DEFAULT 0,
+qualityScore FLOAT NOT NULL DEFAULT 1.0,
+approvedAt DATETIME,
+approvedBy INT,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId),
+INDEX idx_userId (userId),
+INDEX idx_status (status),
+INDEX idx_type (type),
+INDEX idx_category (targetCategory),
+INDEX idx_country (targetCountry),
+INDEX idx_dates (startDate, endDate)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AdPlacement (
+id VARCHAR(50) PRIMARY KEY,
+slot VARCHAR(100) NOT NULL,
+name VARCHAR(255) NOT NULL,
+description TEXT,
+basePrice INT NOT NULL DEFAULT 0,
+auctionEnabled TINYINT(1) DEFAULT 1,
+isActive TINYINT(1) DEFAULT 1,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_slot (slot),
+INDEX idx_active (isActive)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AdCampaignPlacement (
+id INT AUTO_INCREMENT PRIMARY KEY,
+campaignId VARCHAR(50) NOT NULL,
+placementId VARCHAR(50) NOT NULL,
+bid INT NOT NULL DEFAULT 0,
+UNIQUE KEY uk_campaign_placement (campaignId, placementId),
+INDEX idx_campaignId (campaignId),
+INDEX idx_placementId (placementId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AdImpression (
+id BIGINT AUTO_INCREMENT PRIMARY KEY,
+campaignId VARCHAR(50) NOT NULL,
+placementId VARCHAR(50) NOT NULL,
+userId INT,
+sessionId VARCHAR(255),
+ip VARCHAR(45),
+userAgent TEXT,
+cost INT NOT NULL DEFAULT 0,
+weighted TINYINT(1) DEFAULT 1,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_campaignId (campaignId),
+INDEX idx_placementId (placementId),
+INDEX idx_createdAt (createdAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AdClick (
+id BIGINT AUTO_INCREMENT PRIMARY KEY,
+campaignId VARCHAR(50) NOT NULL,
+placementId VARCHAR(50) NOT NULL,
+userId INT,
+sessionId VARCHAR(255),
+ip VARCHAR(45),
+userAgent TEXT,
+cost INT NOT NULL DEFAULT 0,
+fraudulent TINYINT(1) DEFAULT 0,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_campaignId (campaignId),
+INDEX idx_placementId (placementId),
+INDEX idx_createdAt (createdAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AdEvent (
+id BIGINT AUTO_INCREMENT PRIMARY KEY,
+campaignId VARCHAR(50) NOT NULL,
+type VARCHAR(50) NOT NULL,
+userId INT,
+orderId VARCHAR(50),
+revenue INT DEFAULT 0,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_campaignId (campaignId),
+INDEX idx_type (type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AdCampaignNotification (
+id VARCHAR(50) PRIMARY KEY,
+campaignId VARCHAR(50) NOT NULL,
+userId INT,
+type VARCHAR(50) NOT NULL,
+title VARCHAR(255) NOT NULL,
+message TEXT,
+`read` TINYINT(1) DEFAULT 0,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_campaignId (campaignId),
+INDEX idx_userId (userId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ProductEvent (
+id BIGINT AUTO_INCREMENT PRIMARY KEY,
+productId INT NOT NULL,
+event ENUM('view','click','favorite','cart_add','purchase') NOT NULL,
+userId INT,
+sessionId VARCHAR(255),
+ip VARCHAR(45),
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_productId (productId),
+INDEX idx_event (event),
+INDEX idx_createdAt (createdAt),
+INDEX idx_productEvent (productId, event, createdAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS SellerActivity (
+id INT AUTO_INCREMENT PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL,
+avgResponseTime INT DEFAULT 0,
+cancellationRate FLOAT DEFAULT 0,
+availability FLOAT DEFAULT 1.0,
+totalOrders INT DEFAULT 0,
+completedOrders INT DEFAULT 0,
+lastActiveAt DATETIME,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+UNIQUE KEY uk_shopId (shopId),
+INDEX idx_shopId (shopId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS FraudReport (
+id BIGINT AUTO_INCREMENT PRIMARY KEY,
+productId INT NOT NULL,
+reportedBy INT,
+reason VARCHAR(255) NOT NULL,
+details TEXT,
+score INT DEFAULT 0,
+status ENUM('pending','investigating','confirmed','rejected') DEFAULT 'pending',
+actionTaken VARCHAR(255),
+reviewedBy INT,
+reviewedAt DATETIME,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_productId (productId),
+INDEX idx_status (status),
+INDEX idx_createdAt (createdAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS OrganicScoreCache (
+productId INT PRIMARY KEY,
+totalScore FLOAT NOT NULL DEFAULT 0,
+relevanceScore FLOAT DEFAULT 0,
+qualityScore FLOAT DEFAULT 0,
+freshnessScore FLOAT DEFAULT 0,
+availabilityScore FLOAT DEFAULT 0,
+priceScore FLOAT DEFAULT 0,
+sellerReputationScore FLOAT DEFAULT 0,
+performanceScore FLOAT DEFAULT 0,
+activityScore FLOAT DEFAULT 0,
+userExperienceScore FLOAT DEFAULT 0,
+calculatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+expiresAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_totalScore (totalScore DESC),
+INDEX idx_expiresAt (expiresAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS SellerVerification (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL UNIQUE,
+status ENUM('pending','approved','rejected','expired') NOT NULL DEFAULT 'pending',
+verificationType ENUM('individual','business') NOT NULL DEFAULT 'individual',
+idType VARCHAR(50), idNumber VARCHAR(255),
+businessRegNumber VARCHAR(255), taxId VARCHAR(255),
+documents JSON, verifiedBy INT,
+verifiedAt DATETIME, expiresAt DATETIME, rejectionReason TEXT,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_status (status), INDEX idx_shopId (shopId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ProductVariant (
+id INT AUTO_INCREMENT PRIMARY KEY,
+productId INT NOT NULL, name VARCHAR(100) NOT NULL,
+value VARCHAR(100) NOT NULL, sku VARCHAR(100),
+price INT, stock INT DEFAULT 0, image VARCHAR(500), sortOrder INT DEFAULT 0,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_productId (productId), INDEX idx_sku (sku)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ProductVariantGroup (
+id INT AUTO_INCREMENT PRIMARY KEY,
+productId INT NOT NULL, type VARCHAR(50) NOT NULL,
+name VARCHAR(100) NOT NULL, sortOrder INT DEFAULT 0,
+INDEX idx_productId (productId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ProductScheduledPublish (
+id INT AUTO_INCREMENT PRIMARY KEY,
+productId INT NOT NULL, scheduledAt DATETIME NOT NULL,
+publishedAt DATETIME,
+status ENUM('pending','published','cancelled') DEFAULT 'pending',
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_productId (productId), INDEX idx_status (status),
+INDEX idx_scheduledAt (scheduledAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS StockAlert (
+id INT AUTO_INCREMENT PRIMARY KEY,
+productId INT NOT NULL, shopId VARCHAR(50) NOT NULL,
+threshold INT NOT NULL DEFAULT 5, notified TINYINT(1) DEFAULT 0,
+lastNotifiedAt DATETIME,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_productId (productId), INDEX idx_shopId (shopId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ReturnRequest (
+id VARCHAR(50) PRIMARY KEY,
+orderId VARCHAR(50) NOT NULL, productId INT NOT NULL,
+shopId VARCHAR(50) NOT NULL, userId INT NOT NULL,
+reason TEXT NOT NULL,
+status ENUM('pending','approved','rejected','picked_up','received','refunded','cancelled') NOT NULL DEFAULT 'pending',
+refundAmount INT, refundMethod VARCHAR(50),
+documents JSON, notes TEXT, reviewedBy INT,
+reviewedAt DATETIME, refundedAt DATETIME,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_orderId (orderId), INDEX idx_shopId (shopId),
+INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ShopSettings (
+shopId VARCHAR(50) PRIMARY KEY,
+hours JSON, socialLinks JSON, deliveryPolicy TEXT,
+returnPolicy TEXT, contactInfo JSON,
+seoDescription TEXT, seoKeywords VARCHAR(500),
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS PromoCode (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, code VARCHAR(100) NOT NULL,
+discountType ENUM('percentage','fixed') NOT NULL DEFAULT 'percentage',
+discountValue INT NOT NULL, minPurchase INT DEFAULT 0,
+maxUses INT DEFAULT 0, usedCount INT DEFAULT 0,
+applicableProducts JSON, applicableCategories JSON,
+startDate DATETIME NOT NULL, endDate DATETIME NOT NULL,
+isActive TINYINT(1) DEFAULT 1,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+UNIQUE KEY uk_code_shop (shopId, code),
+INDEX idx_shopId (shopId), INDEX idx_code (code),
+INDEX idx_active (isActive)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS FlashSale (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, name VARCHAR(255) NOT NULL,
+description TEXT, discountPercent INT NOT NULL,
+startDate DATETIME NOT NULL, endDate DATETIME NOT NULL,
+isActive TINYINT(1) DEFAULT 1,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId),
+INDEX idx_active_dates (isActive, startDate, endDate)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS FlashSaleProduct (
+id INT AUTO_INCREMENT PRIMARY KEY,
+flashSaleId VARCHAR(50) NOT NULL, productId INT NOT NULL,
+UNIQUE KEY uk_fs_product (flashSaleId, productId),
+INDEX idx_productId (productId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ProductPack (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, name VARCHAR(255) NOT NULL,
+description TEXT, products JSON NOT NULL,
+packPrice INT NOT NULL, originalPrice INT NOT NULL,
+stock INT DEFAULT 0, image VARCHAR(500),
+isActive TINYINT(1) DEFAULT 1, startDate DATETIME, endDate DATETIME,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId), INDEX idx_active (isActive)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS BogoOffer (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, name VARCHAR(255) NOT NULL,
+buyQuantity INT NOT NULL DEFAULT 1, getQuantity INT NOT NULL DEFAULT 1,
+discountPercent INT NOT NULL DEFAULT 100,
+applicableProducts JSON,
+startDate DATETIME NOT NULL, endDate DATETIME NOT NULL,
+isActive TINYINT(1) DEFAULT 1,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId), INDEX idx_active (isActive)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS SellerMessage (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, userId INT NOT NULL,
+orderId VARCHAR(50), subject VARCHAR(255) NOT NULL,
+message TEXT NOT NULL,
+senderRole ENUM('seller','client') NOT NULL,
+isRead TINYINT(1) DEFAULT 0, readAt DATETIME,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId), INDEX idx_userId (userId),
+INDEX idx_orderId (orderId), INDEX idx_isRead (isRead)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS SellerMessageReply (
+id INT AUTO_INCREMENT PRIMARY KEY,
+messageId VARCHAR(50) NOT NULL,
+senderRole ENUM('seller','client') NOT NULL,
+message TEXT NOT NULL, createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_messageId (messageId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AutoReply (
+id INT AUTO_INCREMENT PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, keyword VARCHAR(100) NOT NULL,
+replySubject VARCHAR(255), replyMessage TEXT NOT NULL,
+matchType ENUM('exact','contains','regex') DEFAULT 'contains',
+isActive TINYINT(1) DEFAULT 1,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId), INDEX idx_keyword (keyword)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS MessageTemplate (
+id INT AUTO_INCREMENT PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, name VARCHAR(100) NOT NULL,
+subject VARCHAR(255) NOT NULL, body TEXT NOT NULL,
+category VARCHAR(50) DEFAULT 'general',
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS SellerReport (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL,
+type ENUM('daily','weekly','monthly','yearly','custom') NOT NULL,
+period VARCHAR(50) NOT NULL, data JSON NOT NULL,
+pdfPath VARCHAR(500),
+generatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId),
+INDEX idx_type_period (type, period)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ApiKey (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, name VARCHAR(100) NOT NULL,
+keyHash VARCHAR(255) NOT NULL, keyPrefix VARCHAR(20) NOT NULL,
+permissions JSON NOT NULL, allowedIps JSON,
+rateLimit INT DEFAULT 100, lastUsedAt DATETIME,
+expiresAt DATETIME, isActive TINYINT(1) DEFAULT 1,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId), INDEX idx_keyPrefix (keyPrefix)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ApiRequestLog (
+id BIGINT AUTO_INCREMENT PRIMARY KEY,
+apiKeyId VARCHAR(50), shopId VARCHAR(50),
+endpoint VARCHAR(255) NOT NULL, method VARCHAR(10) NOT NULL,
+statusCode INT NOT NULL, ip VARCHAR(45), duration INT,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_apiKeyId (apiKeyId), INDEX idx_shopId (shopId),
+INDEX idx_createdAt (createdAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AiRecommendation (
+id INT AUTO_INCREMENT PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, productId INT,
+type ENUM('price','optimization','publishing','sales_forecast','detection') NOT NULL,
+title VARCHAR(255) NOT NULL, description TEXT,
+data JSON NOT NULL, confidence FLOAT DEFAULT 0,
+applied TINYINT(1) DEFAULT 0, appliedAt DATETIME,
+dismissed TINYINT(1) DEFAULT 0,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId), INDEX idx_productId (productId),
+INDEX idx_type (type), INDEX idx_applied (applied)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS AiPricingHistory (
+id INT AUTO_INCREMENT PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, productId INT NOT NULL,
+oldPrice INT NOT NULL, recommendedPrice INT NOT NULL,
+appliedPrice INT, reason TEXT, confidence FLOAT,
+revenue_impact INT,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId), INDEX idx_productId (productId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS SellerNotification (
+id VARCHAR(50) PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL,
+type ENUM('new_order','payment_received','low_stock','return_request','new_message','new_review','performance','system') NOT NULL,
+title VARCHAR(255) NOT NULL, message TEXT, data JSON,
+isRead TINYINT(1) DEFAULT 0, readAt DATETIME,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId), INDEX idx_type (type),
+INDEX idx_isRead (isRead), INDEX idx_createdAt (createdAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS SellerSecurity (
+shopId VARCHAR(50) PRIMARY KEY,
+twoFactorEnabled TINYINT(1) DEFAULT 0,
+twoFactorMethod ENUM('app','email','sms') DEFAULT 'app',
+twoFactorSecret VARCHAR(255), backupCodes JSON,
+sessionTimeout INT DEFAULT 60, ipWhitelist JSON,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS LoginLog (
+id BIGINT AUTO_INCREMENT PRIMARY KEY,
+userId INT NOT NULL, ip VARCHAR(45) NOT NULL,
+userAgent TEXT, country VARCHAR(10), city VARCHAR(100),
+device VARCHAR(50), success TINYINT(1) DEFAULT 1,
+failReason VARCHAR(255), sessionId VARCHAR(255),
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_userId (userId), INDEX idx_createdAt (createdAt),
+INDEX idx_success (success), INDEX idx_sessionId (sessionId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS ActionLog (
+id BIGINT AUTO_INCREMENT PRIMARY KEY,
+shopId VARCHAR(50), userId INT NOT NULL,
+action VARCHAR(100) NOT NULL,
+entityType VARCHAR(50), entityId VARCHAR(50),
+details JSON, ip VARCHAR(45), userAgent TEXT,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_shopId (shopId), INDEX idx_userId (userId),
+INDEX idx_action (action), INDEX idx_entity (entityType, entityId),
+INDEX idx_createdAt (createdAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS TeamMember (
+id INT AUTO_INCREMENT PRIMARY KEY,
+shopId VARCHAR(50) NOT NULL, userId INT NOT NULL,
+role ENUM('manager','editor','support','analyst') NOT NULL DEFAULT 'editor',
+permissions JSON,
+status ENUM('active','invited','suspended','removed') DEFAULT 'active',
+invitedBy INT, invitedAt DATETIME, joinedAt DATETIME,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+UNIQUE KEY uk_shop_user (shopId, userId),
+INDEX idx_shopId (shopId), INDEX idx_role (role),
+INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS PasswordReset (
+id INT AUTO_INCREMENT PRIMARY KEY,
+userId INT NOT NULL,
+token VARCHAR(255) NOT NULL UNIQUE,
+expiresAt DATETIME NOT NULL,
+used TINYINT(1) DEFAULT 0,
+createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_token (token),
+INDEX idx_userId (userId),
+INDEX idx_expiresAt (expiresAt),
+FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
