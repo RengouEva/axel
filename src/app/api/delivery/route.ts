@@ -152,7 +152,7 @@ export async function PUT(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const auth = await requireRole(request, ["admin", "seller"])
+    const auth = await requireAuth(request)
     if (!auth.success) return auth.response
 
     const ip = request.headers.get("x-forwarded-for") || "unknown"

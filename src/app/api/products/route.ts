@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
     if (organic) {
       const result = await getOrganicProductsV2(searchParams, page, limit)
-      const formatted = formatProductList(result.products.map((p: any) => ({
+      const formatted = await formatProductList(result.products.map((p: any) => ({
         ...p,
         images: typeof p.images === "string" ? p.images : JSON.stringify(p.images || []),
       })))

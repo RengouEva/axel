@@ -44,7 +44,7 @@ export async function GET(request: Request) {
         "SELECT status, COUNT(*) as count FROM `Order` GROUP BY status"
       ),
       queryAll<any>(
-        "SELECT id, name, email, role, createdAt FROM User ORDER BY createdAt DESC"
+        "SELECT id, name, email, role, createdAt FROM User ORDER BY createdAt DESC LIMIT 50"
       ),
     ])
 

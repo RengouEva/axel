@@ -41,7 +41,7 @@ describe("useLocalStorage", () => {
   })
 
   it("works with complex objects", () => {
-    const { result } = renderUseLocalStorage("obj-test", { items: [], count: 0 })
+    const { result } = renderUseLocalStorage<{ items: number[]; count: number }>("obj-test", { items: [], count: 0 })
     act(() => {
       result.current[1]({ items: [1, 2, 3], count: 3 })
     })

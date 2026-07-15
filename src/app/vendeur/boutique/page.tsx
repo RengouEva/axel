@@ -914,7 +914,7 @@ export default function SellerBoutiquePage() {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )))})()}
                   </tbody>
                 </table>
               </div>

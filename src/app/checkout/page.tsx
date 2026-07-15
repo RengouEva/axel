@@ -90,7 +90,7 @@ export default function CheckoutPage() {
   const [districts, setDistricts] = useState<District[]>([])
   const [taxRate, setTaxRate] = useState(19.25)
   const { items, subtotal, clearCart } = useCart()
-  const { user } = useAuth()
+  const { user, getAuthHeaders } = useAuth()
   const { addNotification } = useNotifications()
 
   const [form, setForm] = useState({
@@ -185,7 +185,7 @@ export default function CheckoutPage() {
 
       await fetch("/api/delivery", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({
           orderId: order.id,
           countryId: form.pays,

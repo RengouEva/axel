@@ -95,7 +95,7 @@ const CREATE_TABLES = [
     FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE SET NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
-  `CREATE TABLE IF NOT EXISTS Orders (
+  `CREATE TABLE IF NOT EXISTS \`Order\` (
     id VARCHAR(50) PRIMARY KEY,
     date DATETIME DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(50) DEFAULT 'pending',
@@ -126,7 +126,7 @@ const CREATE_TABLES = [
     price INT NOT NULL,
     INDEX idx_orderId (orderId),
     INDEX idx_productId (productId),
-    FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (orderId) REFERENCES \`Order\`(id) ON DELETE CASCADE,
     FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
@@ -817,6 +817,19 @@ const CREATE_TABLES = [
     INDEX idx_shopId (shopId), INDEX idx_role (role),
     INDEX idx_status (status)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS PasswordReset (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expiresAt DATETIME NOT NULL,
+    used TINYINT(1) DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_token (token),
+    INDEX idx_userId (userId),
+    INDEX idx_expiresAt (expiresAt),
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ]
 
 const CATEGORIES_SEED = [
@@ -915,9 +928,9 @@ export async function GET(request: Request) {
       "ALTER TABLE Shop ADD INDEX idx_shop_countryId (countryId)",
       "ALTER TABLE Shop ADD INDEX idx_shop_cityId (cityId)",
       "ALTER TABLE Shop ADD INDEX idx_shop_districtId (districtId)",
-      "ALTER TABLE Orders ADD INDEX idx_orders_countryId (countryId)",
-      "ALTER TABLE Orders ADD INDEX idx_orders_cityId (cityId)",
-      "ALTER TABLE Orders ADD INDEX idx_orders_districtId (districtId)",
+      "ALTER TABLE \`Order\` ADD INDEX idx_orders_countryId (countryId)",
+      "ALTER TABLE \`Order\` ADD INDEX idx_orders_cityId (cityId)",
+      "ALTER TABLE \`Order\` ADD INDEX idx_orders_districtId (districtId)",
       "ALTER TABLE DeliveryPerson ADD INDEX idx_dp_countryId (countryId)",
       "ALTER TABLE DeliveryPerson ADD INDEX idx_dp_districtId (districtId)",
       "ALTER TABLE DeliveryPerson ADD INDEX idx_dp_userId (userId)",
@@ -965,7 +978,7 @@ export async function GET(request: Request) {
       "ALTER TABLE ProductScheduledPublish ADD CONSTRAINT fk_psp_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
       "ALTER TABLE StockAlert ADD CONSTRAINT fk_sa_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
       "ALTER TABLE StockAlert ADD CONSTRAINT fk_sa_shop2 FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
-      "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_order FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE CASCADE",
+      "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_order FOREIGN KEY (orderId) REFERENCES \`Order\`(id) ON DELETE CASCADE",
       "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_product FOREIGN KEY (productId) REFERENCES Product(id) ON DELETE CASCADE",
       "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
       "ALTER TABLE ReturnRequest ADD CONSTRAINT fk_rr_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
@@ -979,7 +992,7 @@ export async function GET(request: Request) {
       "ALTER TABLE BogoOffer ADD CONSTRAINT fk_bo_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
       "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
       "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE",
-      "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_order FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE SET NULL",
+      "ALTER TABLE SellerMessage ADD CONSTRAINT fk_sm_order FOREIGN KEY (orderId) REFERENCES \`Order\`(id) ON DELETE SET NULL",
       "ALTER TABLE SellerMessageReply ADD CONSTRAINT fk_smr_message FOREIGN KEY (messageId) REFERENCES SellerMessage(id) ON DELETE CASCADE",
       "ALTER TABLE AutoReply ADD CONSTRAINT fk_ar_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
       "ALTER TABLE MessageTemplate ADD CONSTRAINT fk_mt_shop FOREIGN KEY (shopId) REFERENCES Shop(id) ON DELETE CASCADE",
@@ -1037,19 +1050,19 @@ export async function GET(request: Request) {
     results.push(`${AD_PLACEMENTS_SEED.length} emplacements publicitaires insérés`)
 
     const productColumns = [
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasVideo TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasFeatures TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasTechnicalInfo TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS isDuplicate TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS isSpam TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasCopiedContent TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasInaccurateInfo TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasMisleadingContent TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS isVerifiedListing TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS hasAuthenticPhotos TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Product ADD COLUMN IF NOT EXISTS updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
-      "ALTER TABLE Shop ADD COLUMN IF NOT EXISTS sellerVerified TINYINT(1) DEFAULT 0",
-      "ALTER TABLE Shop ADD COLUMN IF NOT EXISTS responseTime INT DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN hasVideo TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN hasFeatures TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN hasTechnicalInfo TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN isDuplicate TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN isSpam TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN hasCopiedContent TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN hasInaccurateInfo TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN hasMisleadingContent TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN isVerifiedListing TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN hasAuthenticPhotos TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Product ADD COLUMN updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+      "ALTER TABLE Shop ADD COLUMN sellerVerified TINYINT(1) DEFAULT 0",
+      "ALTER TABLE Shop ADD COLUMN responseTime INT DEFAULT 0",
     ]
     for (const col of productColumns) {
       try { await execute(col) } catch { }

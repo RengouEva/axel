@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     const config = { provider: process.env.PAYMENT_PROVIDER || "demo" }
     const provider = config.provider
 
-    const result = await verifyPayment(provider, reference || "", transactionId)
+    const result = await verifyPayment(provider, reference || "", transactionId || undefined)
 
     if (result.success && result.status === "success") {
       await execute("UPDATE `Transaction` SET status = 'completed', reference = ? WHERE id = ?", [reference || result.reference, transaction.id])

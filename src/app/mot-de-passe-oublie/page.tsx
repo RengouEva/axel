@@ -10,9 +10,28 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (email) setSent(true)
+    setError("")
+    if (!email) return
+    setLoading(true)
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || "Erreur"); return }
+      setSent(true)
+    } catch {
+      setError("Erreur réseau. Veuillez réessayer.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -42,6 +61,7 @@ export default function ForgotPasswordPage() {
               Saisissez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && <p className="text-sm text-red-500 bg-red-50 rounded-xl p-3">{error}</p>}
               <Input
                 icon={<Mail className="w-4 h-4" />}
                 type="email"
@@ -50,8 +70,8 @@ export default function ForgotPasswordPage() {
                 onChange={e => setEmail(e.target.value)}
                 required
               />
-              <Button type="submit" className="w-full" disabled={!email}>
-                Envoyer le lien
+              <Button type="submit" className="w-full" disabled={!email || loading}>
+                {loading ? "Envoi en cours..." : "Envoyer le lien"}
               </Button>
             </form>
           </>

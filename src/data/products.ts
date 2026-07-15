@@ -61,8 +61,8 @@ export async function formatProduct(p: any, boostedIds?: Set<number>): Promise<P
   }
 }
 
-export function formatProductList(products: any[], boostedIds?: Set<number>): Product[] {
-  return products.map(p => formatProduct(p, boostedIds))
+export async function formatProductList(products: any[], boostedIds?: Set<number>): Promise<Product[]> {
+  return Promise.all(products.map(p => formatProduct(p, boostedIds)))
 }
 
 export async function getProducts(): Promise<Product[]> {
@@ -169,8 +169,9 @@ export async function getRankedProducts(options: {
     options.limit || 20
   )
 
+  const products = await formatProductList(result.products)
   return {
-    products: formatProductList(result.products),
+    products,
     total: result.total,
     page: result.page,
     totalPages: result.totalPages,
